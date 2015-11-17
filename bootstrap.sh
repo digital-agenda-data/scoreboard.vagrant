@@ -46,6 +46,11 @@ else
     echo "Virtuoso already installed"
 fi
 
+if [ !f "/usr/bin/java" ]
+then
+    install_java()
+fi
+
 install_virtuoso() {
   sudo yum install -y gcc gmake autoconf automake libtool flex bison gperf gawk m4 make openssl-devel readline-devel wget net-tools
   pushd /var/local
@@ -57,8 +62,8 @@ install_virtuoso() {
   then
     tar xzf /vagrant/bin/virtuoso-bin-7.2.1.CentOS7_1.x86_64.tar.gz -C /var/local
   else
-    wget https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.1/virtuoso-opensource-7.2.1.tar.gz
-    tar xzf virtuoso-opensource-7.2.1.tar.gz
+    wget -N -P /vagrant/bin https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.1/virtuoso-opensource-7.2.1.tar.gz
+    tar xzf /vagrant/bin/virtuoso-opensource-7.2.1.tar.gz
     cd virtuoso-opensource-7.2.1
     ./autogen.sh
     ./configure --prefix=/var/local/virtuoso --with-readline
@@ -108,5 +113,29 @@ install_virtuoso() {
   sudo chkconfig --level 2345 virtuoso7 on
   sudo service virtuoso7 start
 
+  popd
+}
+
+install_java() {
+  pushd /var/local
+  # Install Oracle Java 8
+  wget -N -P /vagrant/bin --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u60-b27/jdk-8u60-linux-x64.rpm" 
+  sudo yum localinstall -y /vagrant/bin/jdk-8u60-linux-x64.rpm
+  echo "Java 8 installed in /usr/java/jdk1.8.0_60"
+  # Install Apache Maven
+  wget -N -P /vagrant/bin http://apache.javapipe.com/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz
+  tar xvf /vagrant/bin/apache-maven-3.3.3-bin.tar.gz -C /var/local
+  cat <<'EOF' >> ~/.bashrc
+export M2_HOME=/var/local/apache-maven-3.3.3
+export M2=$M2_HOME/bin
+export PATH=$M2:$PATH
+export JAVA_HOME=/usr/java/latest
+EOF
+  source ~/.bashrc
+  echo "Apache Maven installed in $M2_HOME"
+
+  # install Apache Tomcat 8
+  wget -N -P /vagrant/bin http://apache.javapipe.com/tomcat/tomcat-8/v8.0.28/bin/apache-tomcat-8.0.28.tar.gz
+  tar xvf /vagrant/bin/apache-tomcat-8.0.28.tar.gz -C /var/local
   popd
 }
