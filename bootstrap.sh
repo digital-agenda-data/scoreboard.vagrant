@@ -38,8 +38,13 @@ echo "WARNING! All passwords are set to 'vagrant'. The vagrant account is insecu
 sudo adduser scoreboard
 sudo chmod o+w /var/local
 
-echo "Installing virtuoso..."
-#install_virtuoso()
+if [ ! -d "/var/local/virtuoso" ]
+then
+    echo "Installing virtuoso..."
+    install_virtuoso()
+else
+    echo "Virtuoso already installed"
+fi
 
 install_virtuoso() {
   sudo yum install -y gcc gmake autoconf automake libtool flex bison gperf gawk m4 make openssl-devel readline-devel wget net-tools
@@ -47,14 +52,20 @@ install_virtuoso() {
   # download source
   # git clone -b stable/7 git://github.com/openlink/virtuoso-opensource.git virtuoso-src
   # download and compile virtuoso
-  wget https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.1/virtuoso-opensource-7.2.1.tar.gz
-  tar xzf virtuoso-opensource-7.2.1.tar.gz
-  cd virtuoso-opensource-7.2.1
-  ./autogen.sh
-  ./configure --prefix=/var/local/virtuoso --with-readline
-  make
-  mkdir /var/local/virtuoso
-  make install
+  if [ -f "/vagrant/bin/virtuoso-bin-7.2.1.CentOS7_1.x86_64.tar.gz" ]
+  # pre-compiled binary files available at http://test.digital-agenda-data.eu/download/virtuoso-bin-7.2.1.CentOS7_1.x86_64.tar.gz
+  then
+    tar xzf /vagrant/bin/virtuoso-bin-7.2.1.CentOS7_1.x86_64.tar.gz -C /var/local
+  else
+    wget https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.1/virtuoso-opensource-7.2.1.tar.gz
+    tar xzf virtuoso-opensource-7.2.1.tar.gz
+    cd virtuoso-opensource-7.2.1
+    ./autogen.sh
+    ./configure --prefix=/var/local/virtuoso --with-readline
+    make
+    mkdir /var/local/virtuoso
+    make install
+  fi
   # update config files and data files
   mkdir -p /var/local/virtuoso/var/lib/virtuoso/production
   mkdir -p /var/local/virtuoso/var/lib/virtuoso/test
@@ -77,11 +88,25 @@ install_virtuoso() {
   sed -i  's/\/var\/local\/virtuoso\/var\/lib\/virtuoso\/db\//\/var\/local\/virtuoso\/var\/lib\/virtuoso\/production\//g' $VIRTUOSO_INI
 
   # copy data files
+  wget -N -P /vagrant/data http://test.digital-agenda-data.eu/download/virtuoso_copy.db.gz
+  if [ ! -f /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db ]
+  then
+    # gunzip locally to avoid virtualbox crash
+    # gunzip -c /vagrant/data/virtuoso_copy.db.gz > /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
+  fi
+  if [ ! -f /vagrant/data/virtuoso.db ]
+  then
+    # gunzip locally to avoid virtualbox crash
+    gunzip -c /vagrant/data/virtuoso_copy.db.gz > /vagrant/data/virtuoso.db
+    ln -s /vagrant/data/virtuoso.db virtuoso/var/lib/virtuoso/production/virtuoso.db
+  fi
+
   chown -R scoreboard.scoreboard /var/local/virtuoso
-  
+
   sudo cp /vagrant/etc/virtuoso7 /etc/init.d
   sudo chkconfig --add virtuoso7
   sudo chkconfig --level 2345 virtuoso7 on
+  sudo service virtuoso7 start
 
   popd
 }
