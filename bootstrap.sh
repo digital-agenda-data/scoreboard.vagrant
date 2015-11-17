@@ -23,9 +23,9 @@ sudo systemctl start httpd
 #sudo firewall-cmd --reload
 #sudo systemctl stop firewalld
 
-sudo mkdir /var/www/html/docroot/
-sudo chown -R root:apache /var/www/html/docroot/
-sudo restorecon -R /var/www/html/docroot/
+#sudo mkdir /var/www/html/docroot/
+#sudo chown -R root:apache /var/www/html/docroot/
+#sudo restorecon -R /var/www/html/docroot/
 
 
 # Apache - fix the VH
@@ -35,21 +35,6 @@ sudo restorecon -R /var/www/html/docroot/
 sudo yum clean all
 
 echo "WARNING! All passwords are set to 'vagrant'. The vagrant account is insecure (password/key)!"
-sudo adduser scoreboard
-sudo chmod o+w /var/local
-
-if [ ! -d "/var/local/virtuoso" ]
-then
-    echo "Installing virtuoso..."
-    install_virtuoso()
-else
-    echo "Virtuoso already installed"
-fi
-
-if [ !f "/usr/bin/java" ]
-then
-    install_java()
-fi
 
 install_virtuoso() {
   sudo yum install -y gcc gmake autoconf automake libtool flex bison gperf gawk m4 make openssl-devel readline-devel wget net-tools
@@ -94,19 +79,19 @@ install_virtuoso() {
 
   # copy data files
   wget -N -P /vagrant/data http://test.digital-agenda-data.eu/download/virtuoso_copy.db.gz
-  if [ ! -f /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db ]
-  then
-    # gunzip locally to avoid virtualbox crash
-    # gunzip -c /vagrant/data/virtuoso_copy.db.gz > /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
-  fi
+  #if [ ! -f /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db ]
+  #then
+  #  # gunzip on the host machine to prevent virtualbox crash
+  #  gunzip -c /vagrant/data/virtuoso_copy.db.gz > /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
+  #fi
   if [ ! -f /vagrant/data/virtuoso.db ]
   then
-    # gunzip locally to avoid virtualbox crash
+    # gunzip on the host machine to prevent virtualbox crash
     gunzip -c /vagrant/data/virtuoso_copy.db.gz > /vagrant/data/virtuoso.db
-    ln -s /vagrant/data/virtuoso.db virtuoso/var/lib/virtuoso/production/virtuoso.db
+    sudo su $user -c "ln -s /vagrant/data/virtuoso.db virtuoso/var/lib/virtuoso/production/virtuoso.db"
   fi
 
-  chown -R scoreboard.scoreboard /var/local/virtuoso
+  chown -R $user.$user /var/local/virtuoso
 
   sudo cp /vagrant/etc/virtuoso7 /etc/init.d
   sudo chkconfig --add virtuoso7
@@ -125,12 +110,15 @@ install_java() {
   # Install Apache Maven
   wget -N -P /vagrant/bin http://apache.javapipe.com/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz
   tar xvf /vagrant/bin/apache-maven-3.3.3-bin.tar.gz -C /var/local
-  cat <<'EOF' >> ~/.bashrc
-export M2_HOME=/var/local/apache-maven-3.3.3
-export M2=$M2_HOME/bin
-export PATH=$M2:$PATH
-export JAVA_HOME=/usr/java/latest
+  read -r -d '' RCLINES <<- 'EOF'
+	export M2_HOME=/var/local/apache-maven-3.3.3
+	export M2=$M2_HOME/bin
+	export PATH=$M2:$PATH
+	export JAVA_HOME=/usr/java/latest
 EOF
+  echo "$RCLINES" >> /home/$user/.bashrc
+  echo "$RCLINES" >> /home/vagrant/.bashrc
+  echo "$RCLINES" >> ~/.bashrc
   source ~/.bashrc
   echo "Apache Maven installed in $M2_HOME"
 
@@ -139,3 +127,20 @@ EOF
   tar xvf /vagrant/bin/apache-tomcat-8.0.28.tar.gz -C /var/local
   popd
 }
+
+user=scoreboard
+sudo adduser $user
+sudo chmod o+w /var/local
+
+if [ ! -d "/var/local/virtuoso" ]; then
+    echo "Installing virtuoso..."
+    install_virtuoso
+else
+    echo "Virtuoso already installed"
+fi
+
+if [ ! -f "/usr/bin/java" ]; then
+    install_java
+else
+    echo "Java already installed"
+fi
