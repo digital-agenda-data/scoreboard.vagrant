@@ -30,8 +30,6 @@ Vagrant.configure(2) do |config|
     config.vm.network "forwarded_port", guest: "#{guest}", host: "#{host}", protocol: "tcp"
   end
 
-  config.vm.synced_folder "data", "/vagrant_data"
-
   config.vm.provider "virtualbox" do |vb|
       vb.name = "VagrantDigitalAgendaData"
       vb.gui = true
