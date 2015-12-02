@@ -19,9 +19,10 @@ usermod apache -G vagrant
 sudo systemctl enable httpd
 sudo systemctl start httpd
 
-#sudo firewall-cmd --zone=public --add-port=80/tcp --permanent
-#sudo firewall-cmd --reload
-#sudo systemctl stop firewalld
+sudo firewall-cmd --zone=public --add-port=80/tcp --permanent
+sudo firewall-cmd --zone=public --add-port=8890/tcp --permanent
+sudo firewall-cmd --reload
+#sudo systemctl disable firewalld
 
 #sudo mkdir /var/www/html/docroot/
 #sudo chown -R root:apache /var/www/html/docroot/
@@ -92,6 +93,9 @@ install_virtuoso() {
   fi
 
   chown -R $user.$user /var/local/virtuoso
+  /var/local/virtuoso/
+  echo 'export PATH=$PATH:/var/local/virtuoso/bin' >> /home/$user/.bashrc
+  echo 'export PATH=$PATH:/var/local/virtuoso/bin' >> /home/vagrant/.bashrc
 
   sudo cp /vagrant/etc/virtuoso7 /etc/init.d
   sudo chkconfig --add virtuoso7

@@ -1,20 +1,7 @@
 #!/bin/sh
 
 #https://gist.github.com/enridaga/5d99eaa48114e11375d1
-
-### BEGIN INIT INFO
-# Provides:            virtuoso7
-# Required-Start:      $syslog $local_fs $network
-# Should-Start:        $remote_fs
-# Required-Stop:       $network
-# Should-Stop:         $remote_fs
-# Default-Start:       3 4 5
-# Default-Stop:        0 1 2 6
-# Short-Description:   Controls virtuoso7 data server
-# Description:         Controls virtuoso7 data server
-### END INIT INFO
-
-. /etc/init.d/functions
+# chkconfig: 345 99 01
 
 get_pid() {
    [ -f "$pid_file" ] &&  cat "$pid_file" |sed -e 's/[^0-9]//g'
@@ -30,6 +17,7 @@ virtuoso_db="/var/local/virtuoso/var/lib/virtuoso/production"
 cmd="$virtuoso_bin/virtuoso-t +configfile $virtuoso_db/virtuoso.ini"
 pid_file="$virtuoso_db/virtuoso.lck"
 user="scoreboard"
+# description: Virtuoso 7 production ($virtuoso_db)
 # (END CONF)
 
 
@@ -40,7 +28,7 @@ case "$1" in
         else
                 echo "Starting $name"
                 cd $virtuoso_db
-                daemon --user $user $cmd
+                su $user -c "$cmd"
         fi
         ;;
 
