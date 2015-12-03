@@ -127,7 +127,7 @@ EOF
   echo "Apache Maven installed in $M2_HOME"
 
   # install Apache Tomcat 8
-  wget -N -P /vagrant/bin http://apache.javapipe.com/tomcat/tomcat-8/v8.0.28/bin/apache-tomcat-8.0.28.tar.gz
+  wget -N -P /vagrant/bin http://archive.apache.org/dist/tomcat/tomcat-8/v8.0.28/bin/apache-tomcat-8.0.28.tar.gz
   tar xvf /vagrant/bin/apache-tomcat-8.0.28.tar.gz -C /var/local
   popd
 }
