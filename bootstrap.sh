@@ -129,6 +129,15 @@ EOF
   # install Apache Tomcat 8
   wget -N -P /vagrant/bin http://archive.apache.org/dist/tomcat/tomcat-8/v8.0.28/bin/apache-tomcat-8.0.28.tar.gz
   tar xvf /vagrant/bin/apache-tomcat-8.0.28.tar.gz -C /var/local
+  sudo chown -R $user.$user /var/local/apache-tomcat-8.0.28
+  ln -s /var/local/apache-tomcat-8.0.28 /var/local/tomcat-latest
+  sudo chown -R $user.$user /var/local/tomcat-latest
+  
+  sudo cp /vagrant/etc/tomcat-latest /etc/init.d/
+  sudo chkconfig --add tomcat-latest
+  sudo chkconfig --level 2345 tomcat-latest on
+  sudo service tomcat-latest start
+  
   popd
 }
 
@@ -148,3 +157,6 @@ if [ ! -f "/usr/bin/java" ]; then
 else
     echo "Java already installed"
 fi
+
+# install telnet
+sudo yum install -y telnet
