@@ -1,15 +1,8 @@
-#!/bin/sh
+#!/bin/bash
+#
+# description: Virtuoso init script
+# chkconfig: 234 20 80
 
-#https://gist.github.com/enridaga/5d99eaa48114e11375d1
-# chkconfig: 345 99 01
-
-get_pid() {
-   [ -f "$pid_file" ] &&  cat "$pid_file" |sed -e 's/[^0-9]//g'
-}
-
-is_running() {
-    [ -f "$pid_file" ] && ps `get_pid` > /dev/null 2>&1
-}
 # CONFIGURE HERE AS YOU LIKE
 name="virtuoso7"
 virtuoso_bin="/var/local/virtuoso/bin"
@@ -20,76 +13,77 @@ user="scoreboard"
 # description: Virtuoso 7 production ($virtuoso_db)
 # (END CONF)
 
+get_pid() {
+   [ -f "$pid_file" ] &&  cat "$pid_file" |sed -e 's/[^0-9]//g'
+}
+
+is_running() {
+    [ -f "$pid_file" ] && ps `get_pid` > /dev/null 2>&1
+}
+
+start() {
+    echo "Starting $name..."
+    rm -f $pid_file
+    cd "$virtuoso_db" || exit -1
+    su $user -c "$cmd"
+    echo "Done!"
+}
+
+stop() {
+    #kill $(get_pid)
+    if is_running; then
+            echo -n "Stopping $name..."
+            kill `get_pid` 2> /dev/null
+            for i in {1..10}
+            do
+                if ! is_running; then
+                    break
+                fi
+
+                echo -n "."
+                sleep 1
+            done
+            echo
+
+            if is_running; then
+                echo -e "\e[00;31mNot stopped, may still be shutting down or shutdown may have failed!\e[00m"
+                exit 1
+            else
+                echo "Stopped!"
+                if [ -f "$pid_file" ]; then
+                    rm -f "$pid_file"
+                fi
+            fi
+    else
+        echo -e "\e[00;31mNot running!\e[00m"
+    fi
+}
+
+status() {
+    if is_running; then
+            echo "Running (pid: $(get_pid))!"
+    else
+            echo "Stopped."
+            exit 1
+    fi
+}
 
 case "$1" in
-    start)
-        if is_running; then
-                echo "Already started with pid "$(get_pid)
-        else
-                echo "Starting $name"
-                cd $virtuoso_db
-                su $user -c "$cmd"
-        fi
+  start)
+        start
         ;;
-
-    stop)
-        #kill $(get_pid)
-        if is_running; then
-                echo -n "Stopping $name.."
-                kill `get_pid`
-                for i in {1..10}
-                do
-                    if ! is_running; then
-                        break
-                    fi
-
-                    echo -n "."
-                    sleep 1
-                done
-                echo
-
-                if is_running; then
-                    echo "Not stopped; may still be shutting down or shutdown may have failed"
-                    exit 1
-                else
-                    echo "Stopped"
-                    if [ -f "$pid_file" ]; then
-                        rm "$pid_file"
-                    fi
-                fi
-        else
-            echo "Not running"
-        fi
+  stop)
+        stop
         ;;
-
-    reload)
-        /etc/init.d/$name stop
-        if is_running; then
-                echo "Unable to stop, will not attempt to start"
-                exit 1
-        fi
-        /etc/init.d/$name start
+  status)
+        status
         ;;
-
-    restart)
-        /etc/init.d/$name stop
-        sleep 1
-        /etc/init.d/$name start
+  restart)
+        stop
+        sleep 3
+        start
         ;;
-
-    status)
-
-        if is_running; then
-                echo "Running"
-        else
-                echo "Stopped"
-                exit 1
-        fi
-        ;;
-
-    *)
-        echo "Usage: $0 {start|stop|reload|restart|status}"
-        exit 1
-        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart|status}"
 esac
-
+exit 0

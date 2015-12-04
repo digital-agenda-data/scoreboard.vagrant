@@ -93,9 +93,10 @@ install_virtuoso() {
   fi
 
   sudo chown -R $user.$user /var/local/virtuoso
-  
-  echo 'export PATH=$PATH:/var/local/virtuoso/bin' >> /home/$user/.bashrc
-  echo 'export PATH=$PATH:/var/local/virtuoso/bin' >> /home/vagrant/.bashrc
+
+  # Put virtuoso bin into PATH.  
+  sudo echo 'export PATH=$PATH:/var/local/virtuoso/bin' | sudo tee --append /home/$user/.bashrc > /dev/null
+  sudo echo 'export PATH=$PATH:/var/local/virtuoso/bin' | sudo tee --append /home/vagrant/.bashrc > /dev/null
 
   sudo cp /vagrant/etc/virtuoso7 /etc/init.d
   sudo chkconfig --add virtuoso7
@@ -114,7 +115,7 @@ install_java() {
   # Fix this issue: https://wiki.apache.org/tomcat/HowTo/FasterStartUp#Entropy_Source
   sudo sed -i 's|securerandom.source=file:/dev/random|securerandom.source=file:/dev/./urandom|g' /usr/java/jdk1.8.0_60/jre/lib/security/java.security
   
-  echo "Java 8 installed in /usr/java/jdk1.8.0_60"
+  echo "Java 8 installed in /usr/java/jdk1.8.0_60"rm 
   # Install Apache Maven
   wget -N -P /vagrant/bin http://apache.javapipe.com/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz
   tar xvf /vagrant/bin/apache-maven-3.3.3-bin.tar.gz -C /var/local
