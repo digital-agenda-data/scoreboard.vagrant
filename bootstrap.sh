@@ -61,22 +61,22 @@ install_virtuoso() {
   mkdir -p /var/local/virtuoso/var/lib/virtuoso/production
   mkdir -p /var/local/virtuoso/var/lib/virtuoso/test
   VIRTUOSO_INI=virtuoso/var/lib/virtuoso/production/virtuoso.ini
-  cp virtuoso/var/lib/virtuoso/db/virtuoso.ini $VIRTUOSO_INI
-  sed -i "/^;HTTPLogFile/c\HTTPLogFile\=/var\/local\/virtuoso\/production.log" $VIRTUOSO_INI
-  sed -i "/^MaxClientConnections/c\MaxClientConnections=20" $VIRTUOSO_INI
-  sed -i "/^ServerThreads/c\ServerThreads=20" $VIRTUOSO_INI
+  sudo cp virtuoso/var/lib/virtuoso/db/virtuoso.ini $VIRTUOSO_INI
+  sudo sed -i "/^;HTTPLogFile/c\HTTPLogFile\=/var\/local\/virtuoso\/production.log" $VIRTUOSO_INI
+  sudo sed -i "/^MaxClientConnections/c\MaxClientConnections=20" $VIRTUOSO_INI
+  sudo sed -i "/^ServerThreads/c\ServerThreads=20" $VIRTUOSO_INI
 
-  sed -i "/^NumberOfBuffers/c\NumberOfBuffers=170000" $VIRTUOSO_INI
-  sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
+  sudo sed -i "/^NumberOfBuffers/c\NumberOfBuffers=170000" $VIRTUOSO_INI
+  sudo sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
 
-  sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/local/' $VIRTUOSO_INI
+  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/local/' $VIRTUOSO_INI
   
-  sed -i "/^ResultSetMaxRows/c\ResultSetMaxRows=1000000" $VIRTUOSO_INI
-  sed -i "/^MaxQueryCostEstimationTime/c\MaxQueryCostEstimationTime=5000; in seconds" $VIRTUOSO_INI
-  sed -i "/^MaxQueryExecutionTime/c\MaxQueryExecutionTime=300; in seconds" $VIRTUOSO_INI
-  sed -i "/^DynamicLocal/c\DynamicLocal=1" $VIRTUOSO_INI
+  sudo sed -i "/^ResultSetMaxRows/c\ResultSetMaxRows=1000000" $VIRTUOSO_INI
+  sudo sed -i "/^MaxQueryCostEstimationTime/c\MaxQueryCostEstimationTime=5000; in seconds" $VIRTUOSO_INI
+  sudo sed -i "/^MaxQueryExecutionTime/c\MaxQueryExecutionTime=300; in seconds" $VIRTUOSO_INI
+  sudo sed -i "/^DynamicLocal/c\DynamicLocal=1" $VIRTUOSO_INI
 
-  sed -i  's/\/var\/local\/virtuoso\/var\/lib\/virtuoso\/db\//\/var\/local\/virtuoso\/var\/lib\/virtuoso\/production\//g' $VIRTUOSO_INI
+  sudo sed -i  's/\/var\/local\/virtuoso\/var\/lib\/virtuoso\/db\//\/var\/local\/virtuoso\/var\/lib\/virtuoso\/production\//g' $VIRTUOSO_INI
 
   # copy data files
   wget -N -P /vagrant/data http://test.digital-agenda-data.eu/download/virtuoso_copy.db.gz
@@ -89,11 +89,11 @@ install_virtuoso() {
   then
     # gunzip on the host machine to prevent virtualbox crash
     gunzip -c /vagrant/data/virtuoso_copy.db.gz > /vagrant/data/virtuoso.db
-    sudo su $user -c "ln -s /vagrant/data/virtuoso.db virtuoso/var/lib/virtuoso/production/virtuoso.db"
+    sudo ln -s /vagrant/data/virtuoso.db virtuoso/var/lib/virtuoso/production/virtuoso.db
   fi
 
-  chown -R $user.$user /var/local/virtuoso
-  /var/local/virtuoso/
+  sudo chown -R $user.$user /var/local/virtuoso
+  
   echo 'export PATH=$PATH:/var/local/virtuoso/bin' >> /home/$user/.bashrc
   echo 'export PATH=$PATH:/var/local/virtuoso/bin' >> /home/vagrant/.bashrc
 
