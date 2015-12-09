@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# description: Virtuoso init script
-# chkconfig: 234 20 80
+# description: Virtuoso 7 init script (production)
+# chkconfig: 2345 98 02
 
 # CONFIGURE HERE AS YOU LIKE
 name="virtuoso7"
@@ -10,7 +10,6 @@ virtuoso_db="/var/local/virtuoso/var/lib/virtuoso/production"
 cmd="$virtuoso_bin/virtuoso-t +configfile $virtuoso_db/virtuoso.ini"
 pid_file="$virtuoso_db/virtuoso.lck"
 user="scoreboard"
-# description: Virtuoso 7 production ($virtuoso_db)
 # (END CONF)
 
 get_pid() {

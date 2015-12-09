@@ -46,4 +46,5 @@ Vagrant.configure(2) do |config|
   #config.ssh.insert_key
 
   config.vm.provision :shell, path: "bootstrap.sh"
+  config.vm.provision :shell, path: "post-mount.sh", run: "always", privileged: false
 end
