@@ -21,6 +21,7 @@ sudo systemctl start httpd
 
 sudo firewall-cmd --zone=public --add-port=80/tcp --permanent
 sudo firewall-cmd --zone=public --add-port=8890/tcp --permanent
+sudo firewall-cmd --zone=public --add-port=8441-8448/tcp --permanent
 sudo firewall-cmd --reload
 #sudo systemctl disable firewalld
 
@@ -106,6 +107,38 @@ install_virtuoso() {
   popd
 }
 
+install_plone() {
+  pushd /var/local
+
+  curl https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py | python -
+  sudo yum install -y python-virtualenv libffi-devel cairo libxslt-devel mod_ssl
+  mkdir -p plone
+  git clone https://github.com/digital-agenda-data/scoreboard.buildout.git plone
+  cd plone
+  virtualenv-2.7 .
+  source bin/activate
+  pip install setuptools==7.0 zc.buildout==2.2.5
+  ln -s production.cfg buildout.cfg
+  bin/buildout
+
+  #get data fs
+  wget -N -P /vagrant/data http://digital-agenda-data.eu/download/plone-storage.tar.gz
+  sudo tar -xzvf /vagrant/data/plone-storage.tar.gz --directory=/var/local/plone/var
+
+  sudo chown -R $user.$user /var/local/plone
+
+  #start all
+  su -c "/var/local/plone/bin/supervisord" scoreboard
+
+  # TODO: fix apache config files
+
+  #sudo cp /vagrant/etc/scoreboard-prod.conf /etc/httpd/conf.d
+  #mkdir /var/www/html/prod
+  #sudo service httpd reload
+
+  popd
+}
+
 install_java() {
   pushd /var/local
   # Install Oracle Java 8
@@ -115,7 +148,7 @@ install_java() {
   # Fix this issue: https://wiki.apache.org/tomcat/HowTo/FasterStartUp#Entropy_Source
   sudo sed -i 's|securerandom.source=file:/dev/random|securerandom.source=file:/dev/./urandom|g' /usr/java/jdk1.8.0_60/jre/lib/security/java.security
   
-  echo "Java 8 installed in /usr/java/jdk1.8.0_60"rm 
+  echo "Java 8 installed in /usr/java/jdk1.8.0_60"
   # Install Apache Maven
   wget -N -P /vagrant/bin http://apache.javapipe.com/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz
   tar xvf /vagrant/bin/apache-maven-3.3.3-bin.tar.gz -C /var/local
@@ -155,6 +188,13 @@ if [ ! -d "/var/local/virtuoso" ]; then
     install_virtuoso
 else
     echo "Virtuoso already installed"
+fi
+
+if [ ! -d "/var/local/plone" ]; then
+    echo "Installing Plone (production)..."
+    install_plone
+else
+    echo "Plone (production) already installed"
 fi
 
 if [ ! -f "/usr/bin/java" ]; then

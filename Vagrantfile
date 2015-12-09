@@ -21,7 +21,6 @@ Vagrant.configure(2) do |config|
     "8080" => 28080, # tomcat
     "8890" => 28890, # virtuoso web console
     "1111" => 21111, # virtuoso isql
-    "8440" => 28440, # Plone
     "8441" => 28441, # Plone
     "8442" => 28442, # Plone
     "8443" => 28443, # Plone
