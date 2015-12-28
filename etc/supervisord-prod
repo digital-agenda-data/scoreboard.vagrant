@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+# /etc/rc.d/init.d/supervisord-prod
+#
+# Supervisor is a client/server system that
+# allows its users to monitor and control a
+# number of processes on UNIX-like operating
+# systems.
+#
+# chkconfig: 2345 99 01
+# description: Supervisord Plone (production)
+# processname: supervisord
+
+# Source init functions
+. /etc/rc.d/init.d/functions
+
+prog="supervisord-prod"
+user="scoreboard"
+cmd="/var/local/plone/bin/supervisord"
+PIDFILE="/var/local/plone/var/$prog.pid"
+
+start()
+{
+        echo -n $"Starting $prog: "
+        su $user -c "$cmd --pidfile $PIDFILE"
+        [ -f $PIDFILE ] && success $"$prog startup" || failure $"$prog startup"
+        echo
+}
+
+stop()
+{
+        echo -n $"Shutting down $prog: "
+        su $user -c "/var/local/plone/bin/supervisorctl stop all && /var/local/plone/bin/supervisorctl shutdown"
+        #[ -f $PIDFILE ] && killproc $prog || success $"$prog shutdown"
+        echo
+}
+
+case "$1" in
+
+  start)
+    start
+  ;;
+
+  stop)
+    stop
+  ;;
+
+  status)
+        status $prog
+  ;;
+
+  restart)
+    stop
+    start
+  ;;
+
+  *)
+    echo "Usage: $0 {start|stop|restart|status}"
+  ;;
+
+esac

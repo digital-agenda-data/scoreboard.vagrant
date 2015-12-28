@@ -6,7 +6,7 @@
 # Disable SELinux permanently after reboot
 sudo sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
 # Disable SELinux this session
-sudo sudo setenforce 0
+sudo setenforce 0
 
 # nameserver and yum update
 sudo echo 'nameserver 8.8.8.8' > /etc/resolv.conf
@@ -127,14 +127,20 @@ install_plone() {
 
   sudo chown -R $user.$user /var/local/plone
 
-  #start all
-  su -c "/var/local/plone/bin/supervisord" scoreboard
-
   # TODO: fix apache config files
+  sudo cp /vagrant/etc/scoreboard-prod.conf /etc/httpd/conf.d
+  mkdir /var/www/html/prod
+  sudo chown apache.apache /var/www/html -R
+  sudo service httpd reload
 
-  #sudo cp /vagrant/etc/scoreboard-prod.conf /etc/httpd/conf.d
-  #mkdir /var/www/html/prod
-  #sudo service httpd reload
+  #start all
+  sudo cp /vagrant/etc/supervisord-prod /etc/init.d
+  sudo chkconfig --add supervisord-prod
+  sudo chkconfig --level 2345 supervisord-prod on
+  sudo service supervisord-prod start
+
+  #su -c "/var/local/plone/bin/supervisord" scoreboard
+
 
   popd
 }
