@@ -44,14 +44,14 @@ install_virtuoso() {
   # download source
   # git clone -b stable/7 git://github.com/openlink/virtuoso-opensource.git virtuoso-src
   # download and compile virtuoso
-  if [ -f "/vagrant/bin/virtuoso-bin-7.2.1.CentOS7_1.x86_64.tar.gz" ]
-  # pre-compiled binary files available at http://test.digital-agenda-data.eu/download/virtuoso-bin-7.2.1.CentOS7_1.x86_64.tar.gz
+  if [ -f "/vagrant/bin/virtuoso-bin-7.2.2.CentOS7_1.x86_64.tar.gz" ]
+  # pre-compiled binary files available at http://test.digital-agenda-data.eu/download/virtuoso-bin-7.2.2.CentOS7_1.x86_64.tar.gz
   then
-    tar xzf /vagrant/bin/virtuoso-bin-7.2.1.CentOS7_1.x86_64.tar.gz -C /var/local
+    tar xzf /vagrant/bin/virtuoso-bin-7.2.2.CentOS7_1.x86_64.tar.gz -C /var/local
   else
-    wget -N -P /vagrant/bin https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.1/virtuoso-opensource-7.2.1.tar.gz
-    tar xzf /vagrant/bin/virtuoso-opensource-7.2.1.tar.gz
-    cd virtuoso-opensource-7.2.1
+    wget -N -P /vagrant/bin https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.2.1/virtuoso-opensource-7.2.2.tar.gz
+    tar xzf /vagrant/bin/virtuoso-opensource-7.2.2.tar.gz
+    cd virtuoso-opensource-7.2.2
     ./autogen.sh
     ./configure --prefix=/var/local/virtuoso --with-readline
     make
@@ -80,17 +80,17 @@ install_virtuoso() {
   sudo sed -i  's/\/var\/local\/virtuoso\/var\/lib\/virtuoso\/db\//\/var\/local\/virtuoso\/var\/lib\/virtuoso\/production\//g' $VIRTUOSO_INI
 
   # copy data files
-  wget -N -P /vagrant/data http://test.digital-agenda-data.eu/download/virtuoso_copy.db.gz
+  wget -N -P /vagrant/data http://test.digital-agenda-data.eu/download/virtuoso7-prod.db.gz
   #if [ ! -f /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db ]
   #then
   #  # gunzip on the host machine to prevent virtualbox crash
-  #  gunzip -c /vagrant/data/virtuoso_copy.db.gz > /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
+  #  gunzip -c /vagrant/data/virtuoso7-prod.db.gz > /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
   #fi
   if [ ! -f /vagrant/data/virtuoso.db ]
   then
     # gunzip on the host machine to prevent virtualbox crash
-    gunzip -c /vagrant/data/virtuoso_copy.db.gz > /vagrant/data/virtuoso.db
-    sudo ln -s /vagrant/data/virtuoso.db virtuoso/var/lib/virtuoso/production/virtuoso.db
+    gunzip -c /vagrant/data/virtuoso7-prod.db.gz > /vagrant/data/virtuoso.db
+    sudo ln -s /vagrant/data/virtuoso.db /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
   fi
 
   sudo chown -R $user.$user /var/local/virtuoso
@@ -129,7 +129,7 @@ install_plone() {
 
   # TODO: fix apache config files
   sudo cp /vagrant/etc/scoreboard-prod.conf /etc/httpd/conf.d
-  mkdir /var/www/html/prod
+  mkdir -p /var/www/html/prod/download
   sudo chown apache.apache /var/www/html -R
   sudo service httpd reload
 
