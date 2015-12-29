@@ -1,0 +1,82 @@
+#!/bin/bash
+#
+# description: Elda init script (production)
+# chkconfig: 2345 99 01
+
+name="elda"
+user="scoreboard"
+elda_home="/var/local/elda"
+java="/usr/bin/java"
+cmd="$java -jar start.jar"
+pid_file="$elda_home/elda.pid"
+
+get_pid() {
+   [ -f "$pid_file" ] &&  cat "$pid_file" |sed -e 's/[^0-9]//g'
+}
+
+is_running() {
+    [ -f "$pid_file" ] && ps `get_pid` > /dev/null 2>&1
+}
+
+start() {
+    if is_running; then
+            echo "Already running (pid: $(get_pid))!"
+    else
+      echo "Starting $name..."
+      rm -f $pid_file
+      cd "$elda_home" || exit -1
+      su $user -c "nohup $cmd > /dev/null 2>&1 & echo \$! > $pid_file"
+      echo "Done!"
+    fi
+}
+
+stop() {
+    #kill $(get_pid)
+    if is_running; then
+            echo -n "Stopping $name..."
+            kill `get_pid` 2> /dev/null
+            
+            sleep 3
+
+            if is_running; then
+                echo -e "\e[00;31mNot stopped, may still be shutting down or shutdown may have failed!\e[00m"
+                exit 1
+            else
+                echo "Stopped!"
+                if [ -f "$pid_file" ]; then
+                    rm -f "$pid_file"
+                fi
+            fi
+    else
+        echo -e "\e[00;31mNot running!\e[00m"
+    fi
+}
+
+status() {
+    if is_running; then
+            echo "Running (pid: $(get_pid))!"
+    else
+            echo "Stopped."
+            exit 1
+    fi
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status
+        ;;
+  restart)
+        stop
+        sleep 3
+        start
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart|status}"
+esac
+exit 0

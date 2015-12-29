@@ -20,6 +20,8 @@ sudo systemctl enable httpd
 sudo systemctl start httpd
 
 sudo firewall-cmd --zone=public --add-port=80/tcp --permanent
+# Remove these on public/production servers
+sudo firewall-cmd --zone=public --add-port=8080-8082/tcp --permanent
 sudo firewall-cmd --zone=public --add-port=8890/tcp --permanent
 sudo firewall-cmd --zone=public --add-port=8441-8448/tcp --permanent
 sudo firewall-cmd --reload
@@ -185,6 +187,30 @@ EOF
   popd
 }
 
+# ELDA (1.2.21 vesion used)
+install_elda() {
+    mkdir -p /var/local/elda
+    pushd /var/local/elda
+      # Install and update the elda software
+      wget -N -P /vagrant/bin https://elda.googlecode.com/files/elda-standalone-1.2.21.jar
+      jar xf /vagrant/bin/elda-standalone-1.2.21.jar
+      chmod 777 logs
+      # Update the configuration files
+      cp /vagrant/etc/elda-jetty.xml etc/jetty.xml
+      cp /vagrant/etc/elda-scoreboard.ttl webapps/elda/specs/scoreboard.ttl
+      cp /vagrant/etc/elda-web.xml webapps/elda/WEB-INF/web.xml
+      cp /vagrant/etc/elda-index.html webapps/elda/WEB-INF/index.html
+      cp /vagrant/etc/elda-E1.2.21-index.html /var/local/elda/webapps/elda/lda-assets/docs/E1.2.21-index.html
+      cp /vagrant/etc/elda-E1.2.19-index.html /var/local/elda/webapps/elda/lda-assets/docs/E1.2.19-index.html
+      cp -r webapps/elda/* webapps/root
+      sudo chown -R $user.$user /var/local/elda
+    popd
+    sudo cp /vagrant/etc/elda /etc/init.d/
+    sudo chkconfig --add elda
+    sudo chkconfig --level 2345 elda on
+    sudo service elda start
+}
+
 user=scoreboard
 sudo adduser $user
 sudo chmod o+w /var/local
@@ -207,6 +233,12 @@ if [ ! -f "/usr/bin/java" ]; then
     install_java
 else
     echo "Java already installed"
+fi
+
+if [ ! -f "/usr/local/elda" ]; then
+    install_elda
+else
+    echo "Elda already installed"
 fi
 
 # install telnet

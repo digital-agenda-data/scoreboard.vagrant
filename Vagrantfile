@@ -18,7 +18,9 @@ Vagrant.configure(2) do |config|
   # forwarded ports
   TCP_PORTS_LIST={
     "80"   => 20080, # web
-    "8080" => 28080, # tomcat
+    "8080" => 28080, # cr prod (tomcat)
+    "8081" => 28081, # cr test (tomcat)
+    "8082" => 28082, # elda prod (jetty)
     "8890" => 28890, # virtuoso web console
     "1111" => 21111, # virtuoso isql
     "8441" => 28441, # Plone
