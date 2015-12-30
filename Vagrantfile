@@ -17,7 +17,8 @@ Vagrant.configure(2) do |config|
 
   # forwarded ports
   TCP_PORTS_LIST={
-    "80"   => 20080, # web
+    "80"   => 20080, # http
+    "443"  => 20443, # https
     "8080" => 28080, # cr prod (tomcat)
     "8081" => 28081, # cr test (tomcat)
     "8082" => 28082, # elda prod (jetty)
@@ -31,6 +32,7 @@ Vagrant.configure(2) do |config|
   TCP_PORTS_LIST.each do |guest, host|
     config.vm.network "forwarded_port", guest: "#{guest}", host: "#{host}", protocol: "tcp"
   end
+  config.vm.network "private_network", type: "dhcp"
 
   config.vm.provider "virtualbox" do |vb|
       vb.name = "VagrantDigitalAgendaData"

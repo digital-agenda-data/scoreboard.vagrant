@@ -4,7 +4,7 @@
 
 
 # Disable SELinux permanently after reboot
-sudo sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
+sudo sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 # Disable SELinux this session
 sudo setenforce 0
 
@@ -20,6 +20,7 @@ sudo systemctl enable httpd
 sudo systemctl start httpd
 
 sudo firewall-cmd --zone=public --add-port=80/tcp --permanent
+sudo firewall-cmd --zone=public --add-port=443/tcp --permanent
 # Remove these on public/production servers
 sudo firewall-cmd --zone=public --add-port=8080-8082/tcp --permanent
 sudo firewall-cmd --zone=public --add-port=8890/tcp --permanent
@@ -196,13 +197,14 @@ install_elda() {
       jar xf /vagrant/bin/elda-standalone-1.2.21.jar
       chmod 777 logs
       # Update the configuration files
-      cp /vagrant/etc/elda-jetty.xml etc/jetty.xml
+      sed -i "s/8080/8082/g" etc/jetty.xml
+      sed -i "s/8443/8445/g" etc/jetty.xml
+      sed -i "s/8080/8082/g" webapps/elda/index.html
+      sed -i "s/url=E1.2.19-index.html/url=E1.2.21-index.html/g" webapps/elda/lda-assets/docs/quickstart.html
       cp /vagrant/etc/elda-scoreboard.ttl webapps/elda/specs/scoreboard.ttl
-      cp /vagrant/etc/elda-web.xml webapps/elda/WEB-INF/web.xml
-      cp /vagrant/etc/elda-index.html webapps/elda/WEB-INF/index.html
-      cp /vagrant/etc/elda-E1.2.21-index.html /var/local/elda/webapps/elda/lda-assets/docs/E1.2.21-index.html
-      cp /vagrant/etc/elda-E1.2.19-index.html /var/local/elda/webapps/elda/lda-assets/docs/E1.2.19-index.html
-      cp -r webapps/elda/* webapps/root
+      sed -i "s/hello::specs\/hello-world.ttl/specs\/scoreboard.ttl/g" webapps/elda/WEB-INF/web.xml
+      sed -i "/,.*\.ttl/d" webapps/elda/WEB-INF/web.xml
+
       sudo chown -R $user.$user /var/local/elda
     popd
     sudo cp /vagrant/etc/elda /etc/init.d/
