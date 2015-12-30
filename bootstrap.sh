@@ -28,13 +28,8 @@ sudo firewall-cmd --zone=public --add-port=8441-8448/tcp --permanent
 sudo firewall-cmd --reload
 #sudo systemctl disable firewalld
 
-#sudo mkdir /var/www/html/docroot/
-#sudo chown -R root:apache /var/www/html/docroot/
 #sudo restorecon -R /var/www/html/docroot/
 
-
-# Apache - fix the VH
-# sudo cp /vagrant/etc/httpd.conf /etc/httpd/conf/
 # sudo systemctl restart httpd
 
 sudo yum clean all
@@ -48,7 +43,7 @@ install_virtuoso() {
   # git clone -b stable/7 git://github.com/openlink/virtuoso-opensource.git virtuoso-src
   # download and compile virtuoso
   if [ -f "/vagrant/bin/virtuoso-bin-7.2.2.CentOS7_1.x86_64.tar.gz" ]
-  # pre-compiled binary files available at http://test.digital-agenda-data.eu/download/virtuoso-bin-7.2.2.CentOS7_1.x86_64.tar.gz
+  # pre-compiled binary files available at http://85.9.22.69/scoreboard/download/virtuoso-bin-7.2.2.CentOS7_1.x86_64.tar.gz
   then
     tar xzf /vagrant/bin/virtuoso-bin-7.2.2.CentOS7_1.x86_64.tar.gz -C /var/local
   else
@@ -83,7 +78,7 @@ install_virtuoso() {
   sudo sed -i  's/\/var\/local\/virtuoso\/var\/lib\/virtuoso\/db\//\/var\/local\/virtuoso\/var\/lib\/virtuoso\/production\//g' $VIRTUOSO_INI
 
   # copy data files
-  wget -N -P /vagrant/data http://test.digital-agenda-data.eu/download/virtuoso7-prod.db.gz
+  wget -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso7-prod.db.gz
   #if [ ! -f /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db ]
   #then
   #  # gunzip on the host machine to prevent virtualbox crash
@@ -105,7 +100,7 @@ install_virtuoso() {
   sudo cp /vagrant/etc/virtuoso7 /etc/init.d
   sudo chkconfig --add virtuoso7
   sudo chkconfig --level 2345 virtuoso7 on
-  sudo service virtuoso7 start
+  sudo systemctl start virtuoso7
 
   popd
 }
@@ -125,21 +120,21 @@ install_plone() {
   bin/buildout
 
   #get data fs
-  wget -N -P /vagrant/data http://digital-agenda-data.eu/download/plone-storage.tar.gz
+  wget -N -P /vagrant/data http://85.9.22.69/scoreboard/download/plone-storage.tar.gz
   sudo tar -xzvf /vagrant/data/plone-storage.tar.gz --directory=/var/local/plone/var
 
   sudo chown -R $user.$user /var/local/plone
 
   sudo cp /vagrant/etc/scoreboard-prod.conf /etc/httpd/conf.d
-  mkdir -p /var/www/html/download
+  sudo mkdir -p /var/www/html/download
   sudo chown apache.apache /var/www/html -R
-  sudo service httpd reload
+  sudo systemctl reload httpd
 
   #start all
   sudo cp /vagrant/etc/supervisord-prod /etc/init.d
   sudo chkconfig --add supervisord-prod
   sudo chkconfig --level 2345 supervisord-prod on
-  sudo service supervisord-prod start
+  sudo systemctl start supervisord-prod
 
   popd
 }
@@ -179,7 +174,7 @@ EOF
   sudo cp /vagrant/etc/tomcat-latest /etc/init.d/
   sudo chkconfig --add tomcat-latest
   sudo chkconfig --level 2345 tomcat-latest on
-  sudo service tomcat-latest start
+  sudo systemctl start tomcat-latest
   
   popd
 }
@@ -206,7 +201,7 @@ install_elda() {
     sudo cp /vagrant/etc/elda /etc/init.d/
     sudo chkconfig --add elda
     sudo chkconfig --level 2345 elda on
-    sudo service elda start
+    sudo systemctl start elda
 }
 
 install_sparql_client() {
@@ -241,21 +236,21 @@ install_test_plone() {
   bin/buildout
 
   #get data fs
-  wget -N -P /vagrant/data http://digital-agenda-data.eu/download/plone-storage-test.tar.gz
-  sudo tar -xzvf /vagrant/data/plone-storage-test.tar.gz --directory=/var/local/$HOME_DIR/var
+  wget -N -P /vagrant/data http://85.9.22.69/scoreboard/download/plone-storage-test.tar.gz
+  tar -xzvf /vagrant/data/plone-storage-test.tar.gz --directory=/var/local/$HOME_DIR/var
 
   sudo chown -R $user.$user /var/local/$HOME_DIR
 
   sudo cp /vagrant/etc/scoreboard-test.conf /etc/httpd/conf.d
-  mkdir -p /var/www/test-html/download
+  sudo mkdir -p /var/www/test-html/download
   sudo chown apache.apache /var/www/test-html -R
-  sudo service httpd reload
+  sudo systemctl reload httpd
 
   #start all
   sudo cp /vagrant/etc/plone-test /etc/init.d
   sudo chkconfig --add plone-test
   sudo chkconfig --level 2345 plone-test on
-  sudo service plone-test start
+  sudo systemctl start plone-test
 
   popd
 }

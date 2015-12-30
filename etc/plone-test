@@ -10,13 +10,11 @@
 # chkconfig: 2345 99 01
 # description: Plone (test instance)
 
-# Source init functions
-. /etc/rc.d/init.d/functions
-
 prog="plone-test"
 user="scoreboard"
-cmd_start="/var/local/test-plone/bin/instance start"
-cmd_stop="/var/local/test-plone/bin/instance stop"
+plone_home="/var/local/test-plone"
+cmd_start="$plone_home/bin/instance start"
+cmd_stop="$plone_home/bin/instance stop"
 pid_file="/var/local/test-plone/var/instance.pid"
 
 get_pid() {
@@ -30,21 +28,29 @@ is_running() {
 start()
 {
     if is_running; then
-            echo "Already running (pid: $(get_pid))!"
+       echo "Already running (pid: $(get_pid))!"
     else
       echo "Starting $name..."
       rm -f $pid_file
-      cd "$elda_home" || exit -1
+      cd "$plone_home" || exit -1
       su $user -c "$cmd_start"
-      [ -f $pid_file ] && success $"$name startup" || failure $"$name startup"
-      echo
+      sleep 3
+      if is_running; then
+          echo "Done!"
+          exit 0
+      else
+          echo -e "\e[00;31mNot started!\e[00m"
+          exit 1
+      fi
+    fi
 }
 
 stop() {
     if is_running; then
             echo -n "Stopping $name..."
+            cd "$plone_home" || exit -1
             su $user -c "$cmd_stop"
-            sleep 3
+            sleep 5
             if is_running; then
                 echo -e "\e[00;31mNot stopped, may still be shutting down or shutdown may have failed!\e[00m"
                 exit 1
