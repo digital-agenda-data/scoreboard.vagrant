@@ -130,9 +130,8 @@ install_plone() {
 
   sudo chown -R $user.$user /var/local/plone
 
-  # TODO: fix apache config files
   sudo cp /vagrant/etc/scoreboard-prod.conf /etc/httpd/conf.d
-  mkdir -p /var/www/html/prod/download
+  mkdir -p /var/www/html/download
   sudo chown apache.apache /var/www/html -R
   sudo service httpd reload
 
@@ -141,9 +140,6 @@ install_plone() {
   sudo chkconfig --add supervisord-prod
   sudo chkconfig --level 2345 supervisord-prod on
   sudo service supervisord-prod start
-
-  #su -c "/var/local/plone/bin/supervisord" scoreboard
-
 
   popd
 }
@@ -213,9 +209,79 @@ install_elda() {
     sudo service elda start
 }
 
+install_sparql_client() {
+    pushd /var/local
+      git clone https://github.com/digital-agenda-data/sparql-browser.git
+      cd sparql-browser
+      chmod +x run_sparql_browser.sh
+      virtualenv sandbox
+      source sandbox/bin/activate
+      pip install -r requirements-dev.txt
+      deactivate
+      sudo chown -R $user.$user /var/local/sparql-browser
+    popd
+}
+
+### TEST APPLICATIONS ###
+
+install_test_plone() {
+  pushd /var/local
+
+  HOME_DIR=test-plone
+
+  curl https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py | python -
+  sudo yum install -y python-virtualenv libffi-devel cairo libxslt-devel mod_ssl
+  mkdir -p $HOME_DIR
+  git clone https://github.com/digital-agenda-data/scoreboard.buildout.git $HOME_DIR
+  cd $HOME_DIR
+  virtualenv-2.7 .
+  source bin/activate
+  pip install setuptools==7.0 zc.buildout==2.2.5
+  ln -s test.cfg buildout.cfg
+  bin/buildout
+
+  #get data fs
+  wget -N -P /vagrant/data http://digital-agenda-data.eu/download/plone-storage-test.tar.gz
+  sudo tar -xzvf /vagrant/data/plone-storage-test.tar.gz --directory=/var/local/$HOME_DIR/var
+
+  sudo chown -R $user.$user /var/local/$HOME_DIR
+
+  sudo cp /vagrant/etc/scoreboard-test.conf /etc/httpd/conf.d
+  mkdir -p /var/www/test-html/download
+  sudo chown apache.apache /var/www/test-html -R
+  sudo service httpd reload
+
+  #start all
+  sudo cp /vagrant/etc/plone-test /etc/init.d
+  sudo chkconfig --add plone-test
+  sudo chkconfig --level 2345 plone-test on
+  sudo service plone-test start
+
+  popd
+}
+
+install_test_sparql_client() {
+    pushd /var/local
+      git clone https://github.com/digital-agenda-data/sparql-browser.git test-sparql-browser
+      cd test-sparql-browser
+      chmod +x run_sparql_browser.sh
+      virtualenv sandbox
+      source sandbox/bin/activate
+      pip install -r requirements-dev.txt
+      deactivate
+      sed -i "s/digital-agenda-data.eu/test-virtuoso.digital-agenda-data.eu/g" run_sparql_browser.sh
+      sed -i "s/55000/45300/g" run_sparql_browser.sh
+
+      sudo chown -R $user.$user /var/local/test-sparql-browser
+    popd
+}
+
 user=scoreboard
 sudo adduser $user
 sudo chmod o+w /var/local
+
+# install telnet
+sudo yum install -y telnet
 
 if [ ! -d "/var/local/virtuoso" ]; then
     echo "Installing virtuoso..."
@@ -237,11 +303,29 @@ else
     echo "Java already installed"
 fi
 
-if [ ! -f "/usr/local/elda" ]; then
+if [ ! -f "/var/local/elda" ]; then
     install_elda
 else
     echo "Elda already installed"
 fi
 
-# install telnet
-sudo yum install -y telnet
+if [ ! -f "/var/local/sparql-browser" ]; then
+    install_sparql_client
+else
+    echo "sparql-browser (production) already installed"
+fi
+
+## TEST
+
+if [ ! -d "/var/local/test-plone" ]; then
+    echo "Installing Plone (test)..."
+    install_test_plone
+else
+    echo "Plone (test) already installed"
+fi
+
+if [ ! -f "/var/local/test-sparql-browser" ]; then
+    install_test_sparql_client
+else
+    echo "sparql-browser (test) already installed"
+fi

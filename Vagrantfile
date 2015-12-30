@@ -15,7 +15,7 @@ Vagrant.configure(2) do |config|
   if not ARGV.include?('--no-parallel') # when running in parallel,
   end
 
-  # forwarded ports
+  # forwarded ports.
   TCP_PORTS_LIST={
     "80"   => 20080, # http
     "443"  => 20443, # https

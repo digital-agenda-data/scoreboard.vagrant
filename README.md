@@ -19,7 +19,8 @@ The CentOS 7 box is created using packer: https://github.com/cristiroma/centos-7
 ## Local settings (on host machine)
 
 * Edit the hosts file and add
-``127.0.0.1    digital-agenda-data.lan test.digital-agenda-data.lan``
+    172.28.128.3 semantic.digital-agenda-data.eu digital-agenda-data.eu virtuoso.digital-agenda-data.eu test.digital-agenda-data.eu test-cr.digital-agenda-data.eu test-virtuoso.digital-agenda-data.eu
+(where 172.28.128.3 is the IP of the virtual machine)
 
 ## Troubleshooting
 * Plone does not start. Can be caused by pypy errors during buildout, e.g.
@@ -30,5 +31,9 @@ Solution => Restart buildout
     bin/buildout
 
 ## TODO
-start memcache
-/var/local/plone/parts/memcached/bin/memcached -d -u scoreboard -m 1024 -p 11210 -P /var/local/plone/var/memcached.pid
+
+* Content registry (test and prod)
+* Virtuoso (test)
+* Export scripts
+* Piwik
+* Automatic startup for sparql-client

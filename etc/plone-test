@@ -1,0 +1,89 @@
+#!/bin/sh
+#
+# /etc/rc.d/init.d/supervisord-prod
+#
+# Supervisor is a client/server system that
+# allows its users to monitor and control a
+# number of processes on UNIX-like operating
+# systems.
+#
+# chkconfig: 2345 99 01
+# description: Plone (test instance)
+
+# Source init functions
+. /etc/rc.d/init.d/functions
+
+prog="plone-test"
+user="scoreboard"
+cmd_start="/var/local/test-plone/bin/instance start"
+cmd_stop="/var/local/test-plone/bin/instance stop"
+pid_file="/var/local/test-plone/var/instance.pid"
+
+get_pid() {
+   [ -f "$pid_file" ] &&  cat "$pid_file" |sed -e 's/[^0-9]//g'
+}
+
+is_running() {
+    [ -f "$pid_file" ] && ps `get_pid` > /dev/null 2>&1
+}
+
+start()
+{
+    if is_running; then
+            echo "Already running (pid: $(get_pid))!"
+    else
+      echo "Starting $name..."
+      rm -f $pid_file
+      cd "$elda_home" || exit -1
+      su $user -c "$cmd_start"
+      [ -f $pid_file ] && success $"$name startup" || failure $"$name startup"
+      echo
+}
+
+stop() {
+    if is_running; then
+            echo -n "Stopping $name..."
+            su $user -c "$cmd_stop"
+            sleep 3
+            if is_running; then
+                echo -e "\e[00;31mNot stopped, may still be shutting down or shutdown may have failed!\e[00m"
+                exit 1
+            else
+                echo "Stopped!"
+                if [ -f "$pid_file" ]; then
+                    rm -f "$pid_file"
+                fi
+            fi
+    else
+        echo -e "\e[00;31mNot running!\e[00m"
+    fi
+}
+
+status() {
+    if is_running; then
+            echo "Running (pid: $(get_pid))!"
+    else
+            echo "Stopped."
+            exit 1
+    fi
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status
+        ;;
+  restart)
+        stop
+        sleep 3
+        start
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart|status}"
+esac
+exit 0
