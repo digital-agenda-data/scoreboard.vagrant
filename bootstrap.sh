@@ -86,7 +86,7 @@ install_virtuoso() {
   #fi
   if [ ! -f /vagrant/data/virtuoso.db ]
   then
-    # gunzip on the host machine to prevent virtualbox crash
+    # store on the host machine, to fit in available disk size
     gunzip -c /vagrant/data/virtuoso7-prod.db.gz > /vagrant/data/virtuoso.db
     sudo ln -s /vagrant/data/virtuoso.db /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
   fi
@@ -190,12 +190,16 @@ install_elda() {
       # Update the configuration files
       sed -i "s/8080/8082/g" etc/jetty.xml
       sed -i "s/8443/8445/g" etc/jetty.xml
-      sed -i "s/8080/8082/g" webapps/elda/index.html
-      sed -i "s/url=E1.2.19-index.html/url=E1.2.21-index.html/g" webapps/elda/lda-assets/docs/quickstart.html
       cp /vagrant/etc/elda-scoreboard.ttl webapps/elda/specs/scoreboard.ttl
       sed -i "s/hello::specs\/hello-world.ttl/specs\/scoreboard.ttl/g" webapps/elda/WEB-INF/web.xml
       sed -i "/,.*\.ttl/d" webapps/elda/WEB-INF/web.xml
-
+      # Fix some bugs
+      sed -i "s/8080/8082/g" webapps/elda/index.html
+      sed -i "s/url=E1.2.19-index.html/url=E1.2.21-index.html/g" webapps/elda/lda-assets/docs/quickstart.html
+      for f in webapps/elda/lda-assets/images/grey/16x16/*%20*; do
+        newname="$(echo $f | sed s/%20/\ /)"
+        mv "$f" "$newname"
+      done
       sudo chown -R $user.$user /var/local/elda
     popd
     sudo cp /vagrant/etc/elda /etc/init.d/

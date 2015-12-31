@@ -407,6 +407,11 @@ spec:scoreboard-api a api:API
     , spec:breakdowns
     , spec:breakdown
     , spec:timePeriod
+	; api:variable
+          [api:name "activeImageBase"; api:value "/lda-assets/images/green/16x16"]
+        , [api:name "inactiveImageBase"; api:value "/lda-assets/images/grey/16x16"]
+        , [api:name "_resourceRoot"; api:value "/lda-assets/"]
+        , [api:name "webapp"; api:value "/elda"]
 	.
 
 <http://digital-agenda-data.eu/sparql> elda:supportsNestedSelect true.
