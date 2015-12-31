@@ -25,8 +25,6 @@ The CentOS 7 box is created using packer: https://github.com/cristiroma/centos-7
 ## Troubleshooting
 * Plone does not start. Can be caused by pypy errors during buildout, e.g.
 ```Can't download https://pypi.python.org/packages/source/P/Products.SimpleAttachment/Products.SimpleAttachment-4.4.tar.gz#md5=b067144b5a526b8314e8b5a52e27483e: 500 Internal Server Error```
-or
-```Error: md5 validation failed for python-dateutil-1.5.tar.gz; possible download problem?```
 
 Solution => Restart buildout
     cd /var/local/plone
@@ -41,5 +39,4 @@ Solution => Restart buildout
 * Export scripts
 * Piwik
 * Automatic startup for sparql-client
-* Automatic startup for test memcached (use supervisor for plone-test)
-* Check if buildout error still present (Error: md5 validation failed for python-dateutil-1.5.tar.gz; possible download problem?)
+* supervisor does not properly stop memcached. must add stopasgroup = true in parts/supervisor/supervisord.conf under [program:memcached]

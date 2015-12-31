@@ -130,7 +130,6 @@ install_plone() {
   sudo chown apache.apache /var/www/html -R
   sudo systemctl reload httpd
 
-  #start all
   sudo cp /vagrant/etc/supervisord-prod /etc/init.d
   sudo chkconfig --add supervisord-prod
   sudo chkconfig --level 2345 supervisord-prod on
@@ -237,6 +236,9 @@ install_test_plone() {
   source bin/activate
   pip install setuptools==7.0 zc.buildout==2.2.5
   ln -s test.cfg buildout.cfg
+
+  # copy eggs from production when found
+  if [ -d "/var/local/plone/eggs" ]; then cp -r /var/local/plone/eggs .; fi
   bin/buildout
 
   #get data fs
@@ -250,11 +252,15 @@ install_test_plone() {
   sudo chown apache.apache /var/www/test-html -R
   sudo systemctl reload httpd
 
-  #start all
-  sudo cp /vagrant/etc/plone-test /etc/init.d
-  sudo chkconfig --add plone-test
-  sudo chkconfig --level 2345 plone-test on
-  sudo systemctl start plone-test
+  #sudo cp /vagrant/etc/plone-test /etc/init.d
+  #sudo chkconfig --add plone-test
+  #sudo chkconfig --level 2345 plone-test on
+  #sudo systemctl start plone-test
+
+  sudo cp /vagrant/etc/supervisord-test /etc/init.d
+  sudo chkconfig --add supervisord-test
+  sudo chkconfig --level 2345 supervisord-test on
+  sudo systemctl start supervisord-test
 
   popd
 }

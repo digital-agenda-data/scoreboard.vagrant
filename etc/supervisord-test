@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# /etc/rc.d/init.d/supervisord-prod
+# /etc/rc.d/init.d/supervisord-test
 #
 # Supervisor is a client/server system that
 # allows its users to monitor and control a
@@ -8,15 +8,15 @@
 # systems.
 #
 # chkconfig: 2345 99 01
-# description: Supervisord Plone (production)
+# description: Supervisord Plone (test)
 # processname: supervisord
 
 # Source init functions
 . /etc/rc.d/init.d/functions
 
-prog="supervisord-prod"
+prog="supervisord-test"
 user="scoreboard"
-home="/var/local/plone"
+home="/var/local/test-plone"
 cmd="$home/bin/supervisord"
 PIDFILE="$home/var/$prog.pid"
 
