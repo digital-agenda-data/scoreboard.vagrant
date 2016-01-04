@@ -92,11 +92,11 @@ install_virtuoso() {
   fi
 
   # copy data file for test instance
-  wget -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso6-test.db.gz
+  wget -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso7-test.db.gz
   if [ ! -f /vagrant/data/virtuosotest.db ]
   then
     # store on the host machine, to fit in available disk size
-    gunzip -c /vagrant/data/virtuoso6-test.db.gz > /vagrant/data/virtuosotest.db
+    gunzip -c /vagrant/data/virtuoso7-test.db.gz > /vagrant/data/virtuosotest.db
     sudo ln -s /vagrant/data/virtuosotest.db /var/local/virtuoso/var/lib/virtuoso/test/virtuoso.db
   fi
   VIRTUOSO_INI_TEST=/var/local/virtuoso/var/lib/virtuoso/test/virtuoso.ini
