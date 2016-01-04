@@ -15,6 +15,8 @@ Vagrant.configure(2) do |config|
   if not ARGV.include?('--no-parallel') # when running in parallel,
   end
 
+  config.vbguest.auto_update = false
+
   # forwarded ports.
   TCP_PORTS_LIST={
     "80"   => 20080, # http
