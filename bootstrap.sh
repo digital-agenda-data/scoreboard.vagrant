@@ -91,6 +91,20 @@ install_virtuoso() {
     sudo ln -s /vagrant/data/virtuoso.db /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
   fi
 
+  # copy data file for test instance
+  wget -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso6-test.db.gz
+  if [ ! -f /vagrant/data/virtuosotest.db ]
+  then
+    # store on the host machine, to fit in available disk size
+    gunzip -c /vagrant/data/virtuoso6-test.db.gz > /vagrant/data/virtuosotest.db
+    sudo ln -s /vagrant/data/virtuosotest.db /var/local/virtuoso/var/lib/virtuoso/test/virtuoso.db
+  fi
+  VIRTUOSO_INI_TEST=/var/local/virtuoso/var/lib/virtuoso/test/virtuoso.ini
+  cp /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.ini $VIRTUOSO_INI_TEST
+  sudo sed -i  's/\/var\/lib\/virtuoso\/production\//\/var\/lib\/virtuoso\/test\//g' $VIRTUOSO_INI_TEST
+  sudo sed -i "s/1111/1112/g" $VIRTUOSO_INI_TEST
+  sudo sed -i "s/8890/8891/g" $VIRTUOSO_INI_TEST
+
   sudo chown -R $user.$user /var/local/virtuoso
 
   # Put virtuoso bin into PATH.  
@@ -101,6 +115,11 @@ install_virtuoso() {
   sudo chkconfig --add virtuoso7
   sudo chkconfig --level 2345 virtuoso7 on
   sudo systemctl start virtuoso7
+  sudo cp /vagrant/etc/virtuoso7 /etc/init.d/virtuoso7-test
+  sudo sed -i "s/production/test/g" /etc/init.d/virtuoso7-test
+  sudo chkconfig --add virtuoso7-test
+  sudo chkconfig --level 2345 virtuoso7-test on
+  sudo systemctl start virtuoso7-test
 
   popd
 }

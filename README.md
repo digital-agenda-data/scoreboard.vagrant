@@ -44,8 +44,6 @@ Solution => Restart buildout
 ## TODO
 
 * Content registry (test and prod)
-* Virtuoso (test)
-* HTTPS not working properly for test.digital-agenda-data.eu (mixed content - images, css, etc.)
 * Export scripts
 * Piwik
 * Automatic startup for sparql-client
