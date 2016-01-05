@@ -48,8 +48,7 @@ install_virtuoso() {
     tar xzf /vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_1.x86_64.tar.gz -C /var/local
   else
     # download 7.2.0.1
-    #wget -N -P /vagrant/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.0.1/virtuoso-opensource-7.2.0_p1.tar.gz
-    #wget -N -P /vagrant/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.2.1/virtuoso-opensource-7.2.2.tar.gz
+    #wget -nv -N -P /vagrant/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.0.1/virtuoso-opensource-7.2.0_p1.tar.gz
     tar xzf /vagrant/bin/virtuoso-opensource-7.2.0_p1.tar.gz
     cd virtuoso-opensource-7.2.0_p1
     ./autogen.sh
@@ -80,7 +79,7 @@ install_virtuoso() {
   sudo sed -i  's/\/var\/local\/virtuoso\/var\/lib\/virtuoso\/db\//\/var\/local\/virtuoso\/var\/lib\/virtuoso\/production\//g' $VIRTUOSO_INI
 
   # copy data files
-  wget -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso7-prod.db.gz
+  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso7-prod.db.gz
   #if [ ! -f /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db ]
   #then
   #  # gunzip on the host machine to prevent virtualbox crash
@@ -94,7 +93,7 @@ install_virtuoso() {
   fi
 
   # copy data file for test instance
-  wget -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso7-test.db.gz
+  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso7-test.db.gz
   if [ ! -f /vagrant/data/virtuosotest.db ]
   then
     # store on the host machine, to fit in available disk size
@@ -141,7 +140,7 @@ install_plone() {
   bin/buildout
 
   #get data fs
-  wget -N -P /vagrant/data http://85.9.22.69/scoreboard/download/plone-storage.tar.gz
+  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/plone-storage.tar.gz
   sudo tar -xzvf /vagrant/data/plone-storage.tar.gz --directory=/var/local/plone/var
 
   sudo chown -R $user.$user /var/local/plone
@@ -162,7 +161,7 @@ install_plone() {
 install_java() {
   pushd /var/local
   # Install Oracle Java 8
-  wget -N -P /vagrant/bin --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u60-b27/jdk-8u60-linux-x64.rpm" 
+  wget -nv -N -P /vagrant/bin --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u60-b27/jdk-8u60-linux-x64.rpm" 
   sudo yum localinstall -y /vagrant/bin/jdk-8u60-linux-x64.rpm
   
   # Fix this issue: https://wiki.apache.org/tomcat/HowTo/FasterStartUp#Entropy_Source
@@ -170,7 +169,7 @@ install_java() {
   
   echo "Java 8 installed in /usr/java/jdk1.8.0_60"
   # Install Apache Maven
-  wget -N -P /vagrant/bin http://apache.javapipe.com/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz
+  wget -nv -N -P /vagrant/bin http://apache.javapipe.com/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz
   tar xvf /vagrant/bin/apache-maven-3.3.3-bin.tar.gz -C /var/local
   read -r -d '' RCLINES <<- 'EOF'
 	export M2_HOME=/var/local/apache-maven-3.3.3
@@ -185,7 +184,7 @@ EOF
   echo "Apache Maven installed in $M2_HOME"
 
   # install Apache Tomcat 8
-  wget -N -P /vagrant/bin http://archive.apache.org/dist/tomcat/tomcat-8/v8.0.28/bin/apache-tomcat-8.0.28.tar.gz
+  wget -nv -N -P /vagrant/bin http://archive.apache.org/dist/tomcat/tomcat-8/v8.0.28/bin/apache-tomcat-8.0.28.tar.gz
   tar xvf /vagrant/bin/apache-tomcat-8.0.28.tar.gz -C /var/local
   sudo chown -R $user.$user /var/local/apache-tomcat-8.0.28
   ln -s /var/local/apache-tomcat-8.0.28 /var/local/tomcat-latest
@@ -204,7 +203,7 @@ install_elda() {
     mkdir -p /var/local/elda
     pushd /var/local/elda
       # Install and update the elda software
-      wget -N -P /vagrant/bin https://elda.googlecode.com/files/elda-standalone-1.2.21.jar
+      wget -nv -N -P /vagrant/bin https://elda.googlecode.com/files/elda-standalone-1.2.21.jar
       jar xf /vagrant/bin/elda-standalone-1.2.21.jar
       chmod 777 logs
       # Update the configuration files
@@ -263,7 +262,7 @@ install_test_plone() {
   bin/buildout
 
   #get data fs
-  wget -N -P /vagrant/data http://85.9.22.69/scoreboard/download/plone-storage-test.tar.gz
+  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/plone-storage-test.tar.gz
   tar -xzvf /vagrant/data/plone-storage-test.tar.gz --directory=/var/local/$HOME_DIR/var
 
   sudo chown -R $user.$user /var/local/$HOME_DIR
