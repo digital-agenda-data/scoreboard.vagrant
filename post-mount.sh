@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 #################################################################
 # Executed after startup and mount
-sudo service virtuoso7 start
+sudo systemctl start virtuoso7
+sudo systemctl start virtuoso7-test

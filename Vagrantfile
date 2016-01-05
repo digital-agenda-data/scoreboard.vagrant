@@ -25,7 +25,8 @@ Vagrant.configure(2) do |config|
     "8081" => 28081, # cr test (tomcat)
     "8082" => 28082, # elda prod (jetty)
     "8890" => 28890, # virtuoso web console
-    "1111" => 21111, # virtuoso isql
+    "1111" => 21111, # virtuoso isql prod
+    "1112" => 21112, # virtuoso isql test
     "8441" => 28441, # Plone
     "8442" => 28442, # Plone
     "8443" => 28443, # Plone
@@ -34,7 +35,7 @@ Vagrant.configure(2) do |config|
   TCP_PORTS_LIST.each do |guest, host|
     config.vm.network "forwarded_port", guest: "#{guest}", host: "#{host}", protocol: "tcp"
   end
-  config.vm.network "private_network", type: "dhcp"
+  config.vm.network "public_network", type: "dhcp"
 
   config.vm.provider "virtualbox" do |vb|
       vb.name = "VagrantDigitalAgendaData"

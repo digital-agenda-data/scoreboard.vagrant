@@ -23,8 +23,9 @@ sudo firewall-cmd --zone=public --add-port=80/tcp --permanent
 sudo firewall-cmd --zone=public --add-port=443/tcp --permanent
 # Remove these on public/production servers
 sudo firewall-cmd --zone=public --add-port=8080-8082/tcp --permanent
-sudo firewall-cmd --zone=public --add-port=8890/tcp --permanent
+sudo firewall-cmd --zone=public --add-port=8890-8891/tcp --permanent
 sudo firewall-cmd --zone=public --add-port=8441-8448/tcp --permanent
+sudo firewall-cmd --zone=public --add-port=1111-1112/tcp --permanent
 sudo firewall-cmd --reload
 #sudo systemctl disable firewalld
 
@@ -39,17 +40,18 @@ echo "WARNING! All passwords are set to 'vagrant'. The vagrant account is insecu
 install_virtuoso() {
   sudo yum install -y gcc gmake autoconf automake libtool flex bison gperf gawk m4 make openssl-devel readline-devel wget net-tools
   pushd /var/local
-  # download source
   # git clone -b stable/7 git://github.com/openlink/virtuoso-opensource.git virtuoso-src
   # download and compile virtuoso
-  if [ -f "/vagrant/bin/virtuoso-bin-7.2.2.CentOS7_1.x86_64.tar.gz" ]
-  # pre-compiled binary files available at http://85.9.22.69/scoreboard/download/virtuoso-bin-7.2.2.CentOS7_1.x86_64.tar.gz
+  if [ -f "/vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_1.x86_64.tar.gz" ]
+  # pre-compiled binary files available at http://85.9.22.69/scoreboard/download/virtuoso-bin-7.2.0.1.CentOS7_1.x86_64.tar.gz
   then
-    tar xzf /vagrant/bin/virtuoso-bin-7.2.2.CentOS7_1.x86_64.tar.gz -C /var/local
+    tar xzf /vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_1.x86_64.tar.gz -C /var/local
   else
-    wget -N -P /vagrant/bin https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.2.1/virtuoso-opensource-7.2.2.tar.gz
-    tar xzf /vagrant/bin/virtuoso-opensource-7.2.2.tar.gz
-    cd virtuoso-opensource-7.2.2
+    # download 7.2.0.1
+    #wget -N -P /vagrant/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.0.1/virtuoso-opensource-7.2.0_p1.tar.gz
+    #wget -N -P /vagrant/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.2.1/virtuoso-opensource-7.2.2.tar.gz
+    tar xzf /vagrant/bin/virtuoso-opensource-7.2.0_p1.tar.gz
+    cd virtuoso-opensource-7.2.0_p1
     ./autogen.sh
     ./configure --prefix=/var/local/virtuoso --with-readline
     make
@@ -149,10 +151,10 @@ install_plone() {
   sudo chown apache.apache /var/www/html -R
   sudo systemctl reload httpd
 
-  sudo cp /vagrant/etc/supervisord-prod /etc/init.d
-  sudo chkconfig --add supervisord-prod
-  sudo chkconfig --level 2345 supervisord-prod on
-  sudo systemctl start supervisord-prod
+  sudo cp /vagrant/etc/supervisord /etc/init.d
+  sudo chkconfig --add supervisord
+  sudo chkconfig --level 2345 supervisord on
+  sudo systemctl start supervisord
 
   popd
 }

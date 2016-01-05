@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# /etc/rc.d/init.d/supervisord-prod
+# /etc/rc.d/init.d/supervisord
 #
 # Supervisor is a client/server system that
 # allows its users to monitor and control a
@@ -14,7 +14,7 @@
 # Source init functions
 . /etc/rc.d/init.d/functions
 
-prog="supervisord-prod"
+prog="supervisord"
 user="scoreboard"
 home="/var/local/plone"
 cmd="$home/bin/supervisord"
