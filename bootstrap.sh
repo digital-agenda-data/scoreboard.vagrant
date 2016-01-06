@@ -42,10 +42,10 @@ install_virtuoso() {
   pushd /var/local
   # git clone -b stable/7 git://github.com/openlink/virtuoso-opensource.git virtuoso-src
   # download and compile virtuoso
-  if [ -f "/vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_1.x86_64.tar.gz" ]
-  # pre-compiled binary files available at http://85.9.22.69/scoreboard/download/virtuoso-bin-7.2.0.1.CentOS7_1.x86_64.tar.gz
+  if [ -f "/vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz" ]
+  # pre-compiled binary files available at http://85.9.22.69/scoreboard/download/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz
   then
-    tar xzf /vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_1.x86_64.tar.gz -C /var/local
+    tar xzf /vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz -C /var/local
   else
     # download 7.2.0.1
     #wget -nv -N -P /vagrant/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.0.1/virtuoso-opensource-7.2.0_p1.tar.gz
