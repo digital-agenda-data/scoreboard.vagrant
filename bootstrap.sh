@@ -11,7 +11,7 @@ sudo setenforce 0
 # nameserver and yum update
 sudo echo 'nameserver 8.8.8.8' > /etc/resolv.conf
 sudo rm -f /var/cache/yum/timedhosts.txt
-sudo yum update -y
+sudo yum update -y --exclude=kernel*
 
 # Apache
 sudo yum install -y httpd
