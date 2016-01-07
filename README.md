@@ -47,4 +47,3 @@ Solution => Restart buildout
 * Export scripts
 * Piwik
 * Automatic startup for sparql-client
-* supervisor does not properly stop memcached. must add stopasgroup = true in parts/supervisor/supervisord.conf under [program:memcached]

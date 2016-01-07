@@ -42,26 +42,25 @@ install_virtuoso() {
   pushd /var/local
   # git clone -b stable/7 git://github.com/openlink/virtuoso-opensource.git virtuoso-src
   # download and compile virtuoso
+  VIRTUOSO_HOME=/var/local/virtuoso
   if [ -f "/vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz" ]
   # pre-compiled binary files available at http://85.9.22.69/scoreboard/download/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz
   then
-    tar xzf /vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz -C /var/local
+    tar xzf /vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz -C /var/local --no-same-owner
   else
     # download 7.2.0.1
-    #wget -nv -N -P /vagrant/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.0.1/virtuoso-opensource-7.2.0_p1.tar.gz
-    tar xzf /vagrant/bin/virtuoso-opensource-7.2.0_p1.tar.gz
+    wget -nv -N -P /vagrant/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.0.1/virtuoso-opensource-7.2.0_p1.tar.gz
+    tar xzf /vagrant/bin/virtuoso-opensource-7.2.0_p1.tar.gz --no-same-owner
     cd virtuoso-opensource-7.2.0_p1
     ./autogen.sh
-    ./configure --prefix=/var/local/virtuoso --with-readline
+    ./configure --prefix=$VIRTUOSO_HOME --with-readline
     make
-    mkdir /var/local/virtuoso
+    mkdir $VIRTUOSO_HOME
     make install
   fi
   # update config files and data files
-  mkdir -p /var/local/virtuoso/var/lib/virtuoso/production
-  mkdir -p /var/local/virtuoso/var/lib/virtuoso/test
-  VIRTUOSO_INI=virtuoso/var/lib/virtuoso/production/virtuoso.ini
-  sudo cp virtuoso/var/lib/virtuoso/db/virtuoso.ini $VIRTUOSO_INI
+  VIRTUOSO_INI=$VIRTUOSO_HOME/var/lib/virtuoso/production/virtuoso.ini
+  sudo cp $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini.original
   sudo sed -i "/HTTPLogFile/c\HTTPLogFile\=/var\/local\/virtuoso\/production.log" $VIRTUOSO_INI
   sudo sed -i "/^MaxClientConnections/c\MaxClientConnections=4" $VIRTUOSO_INI
   sudo sed -i "/^ServerThreads/c\ServerThreads=4" $VIRTUOSO_INI
@@ -69,46 +68,26 @@ install_virtuoso() {
   sudo sed -i "/^NumberOfBuffers/c\NumberOfBuffers=170000" $VIRTUOSO_INI
   sudo sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
 
-  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/local/' $VIRTUOSO_INI
+  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/html\/download/' $VIRTUOSO_INI
   
   sudo sed -i "/^ResultSetMaxRows/c\ResultSetMaxRows=1000000" $VIRTUOSO_INI
   sudo sed -i "/^MaxQueryCostEstimationTime/c\MaxQueryCostEstimationTime=5000; in seconds" $VIRTUOSO_INI
   sudo sed -i "/^MaxQueryExecutionTime/c\MaxQueryExecutionTime=300; in seconds" $VIRTUOSO_INI
   sudo sed -i "/^DynamicLocal/c\DynamicLocal=1" $VIRTUOSO_INI
 
-  sudo sed -i 's/\/var\/local\/virtuoso\/var\/lib\/virtuoso\/db\//\/var\/local\/virtuoso\/var\/lib\/virtuoso\/production\//g' $VIRTUOSO_INI
   # do not load the default plugins
   sudo sed -i 's/^\(Load[1-3]\)/;\1/g' $VIRTUOSO_INI
 
   # copy data files
   wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso6-prod.db.gz
-  #if [ ! -f /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db ]
-  #then
-  #  # gunzip on the host machine to prevent virtualbox crash
-  #  gunzip -c /vagrant/data/virtuoso6-prod.db.gz > /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
-  #fi
   if [ ! -f /vagrant/data/virtuoso.db ]
   then
     # store on the host machine, to fit in available disk size
     gunzip -c /vagrant/data/virtuoso6-prod.db.gz > /vagrant/data/virtuoso.db
-    sudo ln -s /vagrant/data/virtuoso.db /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
+    sudo ln -s /vagrant/data/virtuoso.db $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db
   fi
 
-  # copy data file for test instance
-  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso6-test.db.gz
-  if [ ! -f /vagrant/data/virtuosotest.db ]
-  then
-    # store on the host machine, to fit in available disk size
-    gunzip -c /vagrant/data/virtuoso6-test.db.gz > /vagrant/data/virtuosotest.db
-    sudo ln -s /vagrant/data/virtuosotest.db /var/local/virtuoso/var/lib/virtuoso/test/virtuoso.db
-  fi
-  VIRTUOSO_INI_TEST=/var/local/virtuoso/var/lib/virtuoso/test/virtuoso.ini
-  cp /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.ini $VIRTUOSO_INI_TEST
-  sudo sed -i  's/\/var\/lib\/virtuoso\/production\//\/var\/lib\/virtuoso\/test\//g' $VIRTUOSO_INI_TEST
-  sudo sed -i "s/1111/1112/g" $VIRTUOSO_INI_TEST
-  sudo sed -i "s/8890/8891/g" $VIRTUOSO_INI_TEST
-
-  sudo chown -R $user.$user /var/local/virtuoso
+  sudo chown -R $user.$user $VIRTUOSO_HOME
 
   # Put virtuoso bin into PATH.  
   sudo echo 'export PATH=$PATH:/var/local/virtuoso/bin' | sudo tee --append /home/$user/.bashrc > /dev/null
@@ -118,11 +97,6 @@ install_virtuoso() {
   sudo chkconfig --add virtuoso7
   sudo chkconfig --level 2345 virtuoso7 on
   sudo systemctl start virtuoso7
-  sudo cp /vagrant/etc/virtuoso7 /etc/init.d/virtuoso7-test
-  sudo sed -i "s/production/test/g" /etc/init.d/virtuoso7-test
-  sudo chkconfig --add virtuoso7-test
-  sudo chkconfig --level 2345 virtuoso7-test on
-  sudo systemctl start virtuoso7-test
 
   popd
 }
@@ -149,7 +123,8 @@ install_plone() {
 
   sudo cp /vagrant/etc/scoreboard-prod.conf /etc/httpd/conf.d
   sudo mkdir -p /var/www/html/download
-  sudo chown apache.apache /var/www/html -R
+  sudo chown apache.scoreboard /var/www/html -R
+  sudo chmod g+w /var/www/html -R
   sudo systemctl reload httpd
 
   sudo cp /vagrant/etc/supervisord /etc/init.d
@@ -244,6 +219,75 @@ install_sparql_client() {
 
 ### TEST APPLICATIONS ###
 
+install_test_virtuoso() {
+  sudo yum install -y gcc gmake autoconf automake libtool flex bison gperf gawk m4 make openssl-devel readline-devel wget net-tools
+  pushd /var/local
+  # git clone -b stable/7 git://github.com/openlink/virtuoso-opensource.git virtuoso-src
+  # download and compile virtuoso
+  VIRTUOSO_HOME=/var/local/test-virtuoso
+  if [ -f "/vagrant/bin/virtuoso-test-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz" ]
+  # pre-compiled binary files available at http://85.9.22.69/scoreboard/download/virtuoso-test-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz
+  then
+    tar xzf /vagrant/bin/virtuoso-test-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz -C /var/local --no-same-owner
+  else
+    # download 7.2.0.1
+    wget -nv -N -P /vagrant/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.0.1/virtuoso-opensource-7.2.0_p1.tar.gz
+    tar xzf /vagrant/bin/virtuoso-opensource-7.2.0_p1.tar.gz --no-same-owner
+    cd virtuoso-opensource-7.2.0_p1
+    ./autogen.sh
+    ./configure --prefix=$VIRTUOSO_HOME --with-readline
+    make
+    mkdir $VIRTUOSO_HOME
+    make install
+  fi
+  # update config files and data files
+  VIRTUOSO_INI=$VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini
+  sudo cp $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini.original
+  sudo sed -i "/HTTPLogFile/c\HTTPLogFile\=/var\/local\/virtuoso\/test.log" $VIRTUOSO_INI
+  sudo sed -i "/^MaxClientConnections/c\MaxClientConnections=4" $VIRTUOSO_INI
+  sudo sed -i "/^ServerThreads/c\ServerThreads=4" $VIRTUOSO_INI
+
+  sudo sed -i "/^NumberOfBuffers/c\NumberOfBuffers=170000" $VIRTUOSO_INI
+  sudo sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
+
+  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/test-html\/download' $VIRTUOSO_INI
+  
+  sudo sed -i "/^ResultSetMaxRows/c\ResultSetMaxRows=1000000" $VIRTUOSO_INI
+  sudo sed -i "/^MaxQueryCostEstimationTime/c\MaxQueryCostEstimationTime=5000; in seconds" $VIRTUOSO_INI
+  sudo sed -i "/^MaxQueryExecutionTime/c\MaxQueryExecutionTime=300; in seconds" $VIRTUOSO_INI
+  sudo sed -i "/^DynamicLocal/c\DynamicLocal=1" $VIRTUOSO_INI
+
+  sudo sed -i "s/1111/1112/g" $VIRTUOSO_INI
+  sudo sed -i "s/8890/8891/g" $VIRTUOSO_INI
+
+  # do not load the default plugins
+  sudo sed -i 's/^\(Load[1-3]\)/;\1/g' $VIRTUOSO_INI
+
+  # copy data file for test instance
+  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso6-test.db.gz
+  if [ ! -f /vagrant/data/virtuosotest.db ]
+  then
+    # store on the host machine, to fit in available disk size
+    gunzip -c /vagrant/data/virtuoso6-test.db.gz > /vagrant/data/virtuosotest.db
+    sudo ln -s /vagrant/data/virtuosotest.db $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db
+  fi
+  sudo chown -R $user.$user $VIRTUOSO_HOME
+
+  # Put virtuoso bin into PATH.  
+  sudo echo 'export PATH=$PATH:/var/local/test-virtuoso/bin' | sudo tee --append /home/$user/.bashrc > /dev/null
+  sudo echo 'export PATH=$PATH:/var/local/test-virtuoso/bin' | sudo tee --append /home/vagrant/.bashrc > /dev/null
+
+  sudo cp /vagrant/etc/virtuoso7 /etc/init.d/virtuoso7-test
+  sudo sed -i "s/production/test/g" /etc/init.d/virtuoso7-test
+  sudo sed -i "s/\/var\/local\/virtuoso\//\/var\/local\/test-virtuoso\//g" /etc/init.d/virtuoso7-test
+  
+  sudo chkconfig --add virtuoso7-test
+  sudo chkconfig --level 2345 virtuoso7-test on
+  sudo systemctl start virtuoso7-test
+
+  popd
+}
+
 install_test_plone() {
   pushd /var/local
 
@@ -271,7 +315,8 @@ install_test_plone() {
 
   sudo cp /vagrant/etc/scoreboard-test.conf /etc/httpd/conf.d
   sudo mkdir -p /var/www/test-html/download
-  sudo chown apache.apache /var/www/test-html -R
+  sudo chown apache.scoreboard /var/www/test-html -R
+  sudo chmod g+w /var/www/test-html -R
   sudo systemctl reload httpd
 
   #sudo cp /vagrant/etc/plone-test /etc/init.d
@@ -311,10 +356,10 @@ sudo chmod o+w /var/local
 sudo yum install -y telnet
 
 if [ ! -d "/var/local/virtuoso" ]; then
-    echo "Installing virtuoso..."
+    echo "Installing virtuoso (production) ..."
     install_virtuoso
 else
-    echo "Virtuoso already installed"
+    echo "Virtuoso (production) already installed"
 fi
 
 if [ ! -d "/var/local/plone" ]; then
@@ -343,6 +388,13 @@ else
 fi
 
 ## TEST
+
+if [ ! -d "/var/local/test-virtuoso" ]; then
+    echo "Installing virtuoso (test)..."
+    install_test_virtuoso
+else
+    echo "Virtuoso (test) already installed"
+fi
 
 if [ ! -d "/var/local/test-plone" ]; then
     echo "Installing Plone (test)..."

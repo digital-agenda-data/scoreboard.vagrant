@@ -6,7 +6,7 @@
 # CONFIGURE HERE AS YOU LIKE
 name="virtuoso7"
 virtuoso_bin="/var/local/virtuoso/bin"
-virtuoso_db="/var/local/virtuoso/var/lib/virtuoso/production"
+virtuoso_db="/var/local/virtuoso/var/lib/virtuoso/db"
 cmd="$virtuoso_bin/virtuoso-t +configfile $virtuoso_db/virtuoso.ini"
 pid_file="$virtuoso_db/virtuoso.lck"
 user="scoreboard"
