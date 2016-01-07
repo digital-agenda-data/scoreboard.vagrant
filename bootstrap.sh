@@ -62,9 +62,9 @@ install_virtuoso() {
   mkdir -p /var/local/virtuoso/var/lib/virtuoso/test
   VIRTUOSO_INI=virtuoso/var/lib/virtuoso/production/virtuoso.ini
   sudo cp virtuoso/var/lib/virtuoso/db/virtuoso.ini $VIRTUOSO_INI
-  sudo sed -i "/^;HTTPLogFile/c\HTTPLogFile\=/var\/local\/virtuoso\/production.log" $VIRTUOSO_INI
-  sudo sed -i "/^MaxClientConnections/c\MaxClientConnections=20" $VIRTUOSO_INI
-  sudo sed -i "/^ServerThreads/c\ServerThreads=20" $VIRTUOSO_INI
+  sudo sed -i "/HTTPLogFile/c\HTTPLogFile\=/var\/local\/virtuoso\/production.log" $VIRTUOSO_INI
+  sudo sed -i "/^MaxClientConnections/c\MaxClientConnections=4" $VIRTUOSO_INI
+  sudo sed -i "/^ServerThreads/c\ServerThreads=4" $VIRTUOSO_INI
 
   sudo sed -i "/^NumberOfBuffers/c\NumberOfBuffers=170000" $VIRTUOSO_INI
   sudo sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
@@ -76,28 +76,30 @@ install_virtuoso() {
   sudo sed -i "/^MaxQueryExecutionTime/c\MaxQueryExecutionTime=300; in seconds" $VIRTUOSO_INI
   sudo sed -i "/^DynamicLocal/c\DynamicLocal=1" $VIRTUOSO_INI
 
-  sudo sed -i  's/\/var\/local\/virtuoso\/var\/lib\/virtuoso\/db\//\/var\/local\/virtuoso\/var\/lib\/virtuoso\/production\//g' $VIRTUOSO_INI
+  sudo sed -i 's/\/var\/local\/virtuoso\/var\/lib\/virtuoso\/db\//\/var\/local\/virtuoso\/var\/lib\/virtuoso\/production\//g' $VIRTUOSO_INI
+  # do not load the default plugins
+  sudo sed -i 's/^\(Load[1-3]\)/;\1/g' $VIRTUOSO_INI
 
   # copy data files
-  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso7-prod.db.gz
+  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso6-prod.db.gz
   #if [ ! -f /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db ]
   #then
   #  # gunzip on the host machine to prevent virtualbox crash
-  #  gunzip -c /vagrant/data/virtuoso7-prod.db.gz > /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
+  #  gunzip -c /vagrant/data/virtuoso6-prod.db.gz > /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
   #fi
   if [ ! -f /vagrant/data/virtuoso.db ]
   then
     # store on the host machine, to fit in available disk size
-    gunzip -c /vagrant/data/virtuoso7-prod.db.gz > /vagrant/data/virtuoso.db
+    gunzip -c /vagrant/data/virtuoso6-prod.db.gz > /vagrant/data/virtuoso.db
     sudo ln -s /vagrant/data/virtuoso.db /var/local/virtuoso/var/lib/virtuoso/production/virtuoso.db
   fi
 
   # copy data file for test instance
-  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso7-test.db.gz
+  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso6-test.db.gz
   if [ ! -f /vagrant/data/virtuosotest.db ]
   then
     # store on the host machine, to fit in available disk size
-    gunzip -c /vagrant/data/virtuoso7-test.db.gz > /vagrant/data/virtuosotest.db
+    gunzip -c /vagrant/data/virtuoso6-test.db.gz > /vagrant/data/virtuosotest.db
     sudo ln -s /vagrant/data/virtuosotest.db /var/local/virtuoso/var/lib/virtuoso/test/virtuoso.db
   fi
   VIRTUOSO_INI_TEST=/var/local/virtuoso/var/lib/virtuoso/test/virtuoso.ini
