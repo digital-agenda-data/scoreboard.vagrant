@@ -348,32 +348,55 @@ install_test_sparql_client() {
     popd
 }
 
+#
 # Installation script of Content Registry.
+#
+
 install_contreg() {
 
+	# Prepare CR application home and build directories.
 	mkdir -p /var/local/cr
 	mkdir -p /var/local/cr/build
-
 	mkdir -p /var/local/cr/apphome
 	mkdir -p /var/local/cr/apphome/acl
 	mkdir -p /var/local/cr/apphome/filestore
 	mkdir -p /var/local/cr/apphome/staging
 	mkdir -p /var/local/cr/apphome/tmp
 
+	# Go into CR build directory and checkout CR source code from GitHub.
 	pushd /var/local/cr/build
 	git clone https://github.com/digital-agenda-data/scoreboard.contreg.git
 	cd scoreboard.contreg
-	cp sample.properties local.properties
+	git checkout upgrade-2016-incl-sesame-and-liquibase-v7201
 
+	# Prepare local.properties.
+	cp sample.properties local.properties
+	sudo sed -i "/^\s*application.homeDir/c\application.homeDir\=/var\/local\/cr\/apphome" local.properties
+	sudo sed -i "/^\s*application.homeURL/c\application.homeURL\=/http:\/\/digital-agenda-data.eu\/data" local.properties
+
+	# Build with Maven and ensure Liquibase changelog is synced.
+	mvn -Dmaven.test.skip=true clean install
+	mvn liquibase:changelogSync
+
+	# Deploy to Tomcat.
+	rm -rf /var/local/tomcat-latest/webapps/data
+	rm -rf /var/local/tomcat-latest/work/Catalina/localhost/data
+	rm -rf /var/local/tomcat-latest/conf/Catalina/localhost/data.xml
+	cp ./target/cr-das.war /var/local/tomcat-latest/webapps/data.war
+
+	# Ensure the correct owner of CR application directory.
 	sudo chown -R $user.$user /var/local/cr
+
+	# Restart Tomcat.
+	sudo systemctl start tomcat-latest
+
+	# Pop the current directory.
 	popd
 }
 
 user=scoreboard
 sudo adduser $user
 sudo chmod o+w /var/local
-
-contregHomeUrl=http://digital-agenda-data.eu/data
 
 # install telnet
 sudo yum install -y telnet
