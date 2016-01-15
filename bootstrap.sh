@@ -59,7 +59,7 @@ install_virtuoso() {
     make install
   fi
   # update config files and data files
-  VIRTUOSO_INI=$VIRTUOSO_HOME/var/lib/virtuoso/production/virtuoso.ini
+  VIRTUOSO_INI=$VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini
   sudo cp $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini.original
   sudo sed -i "/HTTPLogFile/c\HTTPLogFile\=/var\/local\/virtuoso\/production.log" $VIRTUOSO_INI
   sudo sed -i "/^MaxClientConnections/c\MaxClientConnections=4" $VIRTUOSO_INI
