@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #################################################################
-# Digital Agenda Data (build system requirements) 
+# Digital Agenda Data (build system requirements)
 
 
 # Disable SELinux permanently after reboot
@@ -69,7 +69,7 @@ install_virtuoso() {
   sudo sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
 
   sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/html\/download/' $VIRTUOSO_INI
-  
+
   sudo sed -i "/^ResultSetMaxRows/c\ResultSetMaxRows=1000000" $VIRTUOSO_INI
   sudo sed -i "/^MaxQueryCostEstimationTime/c\MaxQueryCostEstimationTime=5000; in seconds" $VIRTUOSO_INI
   sudo sed -i "/^MaxQueryExecutionTime/c\MaxQueryExecutionTime=300; in seconds" $VIRTUOSO_INI
@@ -89,7 +89,7 @@ install_virtuoso() {
 
   sudo chown -R $user.$user $VIRTUOSO_HOME
 
-  # Put virtuoso bin into PATH.  
+  # Put virtuoso bin into PATH.
   sudo echo 'export PATH=$PATH:/var/local/virtuoso/bin' | sudo tee --append /home/$user/.bashrc > /dev/null
   sudo echo 'export PATH=$PATH:/var/local/virtuoso/bin' | sudo tee --append /home/vagrant/.bashrc > /dev/null
 
@@ -138,12 +138,12 @@ install_plone() {
 install_java() {
   pushd /var/local
   # Install Oracle Java 8
-  wget -nv -N -P /vagrant/bin --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u60-b27/jdk-8u60-linux-x64.rpm" 
+  wget -nv -N -P /vagrant/bin --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u60-b27/jdk-8u60-linux-x64.rpm"
   sudo yum localinstall -y /vagrant/bin/jdk-8u60-linux-x64.rpm
-  
+
   # Fix this issue: https://wiki.apache.org/tomcat/HowTo/FasterStartUp#Entropy_Source
   sudo sed -i 's|securerandom.source=file:/dev/random|securerandom.source=file:/dev/./urandom|g' /usr/java/jdk1.8.0_60/jre/lib/security/java.security
-  
+
   echo "Java 8 installed in /usr/java/jdk1.8.0_60"
   # Install Apache Maven
   wget -nv -N -P /vagrant/bin http://apache.javapipe.com/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz
@@ -166,12 +166,12 @@ EOF
   sudo chown -R $user.$user /var/local/apache-tomcat-8.0.28
   ln -s /var/local/apache-tomcat-8.0.28 /var/local/tomcat-latest
   sudo chown -R $user.$user /var/local/tomcat-latest
-  
+
   sudo cp /vagrant/etc/tomcat-latest /etc/init.d/
   sudo chkconfig --add tomcat-latest
   sudo chkconfig --level 2345 tomcat-latest on
   sudo systemctl start tomcat-latest
-  
+
   popd
 }
 
@@ -251,7 +251,7 @@ install_test_virtuoso() {
   sudo sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
 
   sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/test-html\/download' $VIRTUOSO_INI
-  
+
   sudo sed -i "/^ResultSetMaxRows/c\ResultSetMaxRows=1000000" $VIRTUOSO_INI
   sudo sed -i "/^MaxQueryCostEstimationTime/c\MaxQueryCostEstimationTime=5000; in seconds" $VIRTUOSO_INI
   sudo sed -i "/^MaxQueryExecutionTime/c\MaxQueryExecutionTime=300; in seconds" $VIRTUOSO_INI
@@ -273,14 +273,14 @@ install_test_virtuoso() {
   fi
   sudo chown -R $user.$user $VIRTUOSO_HOME
 
-  # Put virtuoso bin into PATH.  
+  # Put virtuoso bin into PATH.
   sudo echo 'export PATH=$PATH:/var/local/test-virtuoso/bin' | sudo tee --append /home/$user/.bashrc > /dev/null
   sudo echo 'export PATH=$PATH:/var/local/test-virtuoso/bin' | sudo tee --append /home/vagrant/.bashrc > /dev/null
 
   sudo cp /vagrant/etc/virtuoso7 /etc/init.d/virtuoso7-test
   sudo sed -i "s/production/test/g" /etc/init.d/virtuoso7-test
   sudo sed -i "s/\/var\/local\/virtuoso\//\/var\/local\/test-virtuoso\//g" /etc/init.d/virtuoso7-test
-  
+
   sudo chkconfig --add virtuoso7-test
   sudo chkconfig --level 2345 virtuoso7-test on
   sudo systemctl start virtuoso7-test
@@ -348,13 +348,37 @@ install_test_sparql_client() {
     popd
 }
 
+# Installation script of Content Registry.
+install_contreg() {
+
+	mkdir -p /var/local/cr
+	mkdir -p /var/local/cr/build
+
+	mkdir -p /var/local/cr/apphome
+	mkdir -p /var/local/cr/apphome/acl
+	mkdir -p /var/local/cr/apphome/filestore
+	mkdir -p /var/local/cr/apphome/staging
+	mkdir -p /var/local/cr/apphome/tmp
+
+	pushd /var/local/cr/build
+	git clone https://github.com/digital-agenda-data/scoreboard.contreg.git
+	cd scoreboard.contreg
+	cp sample.properties local.properties
+
+	sudo chown -R $user.$user /var/local/cr
+	popd
+}
+
 user=scoreboard
 sudo adduser $user
 sudo chmod o+w /var/local
 
+contregHomeUrl=http://digital-agenda-data.eu/data
+
 # install telnet
 sudo yum install -y telnet
 
+# Install Virtuoso.
 if [ ! -d "/var/local/virtuoso" ]; then
     echo "Installing virtuoso (production) ..."
     install_virtuoso
@@ -362,6 +386,7 @@ else
     echo "Virtuoso (production) already installed"
 fi
 
+# Install Plone.
 if [ ! -d "/var/local/plone" ]; then
     echo "Installing Plone (production)..."
     install_plone
@@ -369,18 +394,21 @@ else
     echo "Plone (production) already installed"
 fi
 
+# Install Java + Tomcat.
 if [ ! -f "/usr/bin/java" ]; then
     install_java
 else
     echo "Java already installed"
 fi
 
+# Install ELDA.
 if [ ! -f "/var/local/elda" ]; then
     install_elda
 else
     echo "Elda already installed"
 fi
 
+# Install SPARQL browser.
 if [ ! -f "/var/local/sparql-browser" ]; then
     install_sparql_client
 else
