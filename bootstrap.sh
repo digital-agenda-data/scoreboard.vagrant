@@ -83,8 +83,11 @@ install_virtuoso() {
   if [ ! -f /vagrant/data/virtuoso.db ]
   then
     # store on the host machine, to fit in available disk size
-    gunzip -c /vagrant/data/virtuoso6-prod.db.gz > /vagrant/data/virtuoso.db
-    sudo ln -s /vagrant/data/virtuoso.db $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db
+  fi
+  
+  if [ ! -f $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db ]
+  then
+	sudo ln -s /vagrant/data/virtuoso.db $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db
   fi
 
   sudo chown -R $user.$user $VIRTUOSO_HOME
@@ -93,9 +96,10 @@ install_virtuoso() {
   sudo echo 'export PATH=$PATH:/var/local/virtuoso/bin' | sudo tee --append /home/$user/.bashrc > /dev/null
   sudo echo 'export PATH=$PATH:/var/local/virtuoso/bin' | sudo tee --append /home/vagrant/.bashrc > /dev/null
 
-  sudo cp /vagrant/etc/virtuoso7 /etc/init.d
-  sudo chkconfig --add virtuoso7
-  sudo chkconfig --level 2345 virtuoso7 on
+  sudo cp /vagrant/etc/virtuoso7.service /etc/systemd/system/
+  #sudo systemctl enable virtuoso7
+
+
   sudo systemctl start virtuoso7
 
   popd
@@ -127,9 +131,8 @@ install_plone() {
   sudo chmod g+w /var/www/html -R
   sudo systemctl reload httpd
 
-  sudo cp /vagrant/etc/supervisord /etc/init.d
-  sudo chkconfig --add supervisord
-  sudo chkconfig --level 2345 supervisord on
+  sudo cp /vagrant/etc/supervisord.service /etc/systemd/system/
+  sudo systemctl enable supervisord
   sudo systemctl start supervisord
 
   popd
@@ -167,9 +170,8 @@ EOF
   ln -s /var/local/apache-tomcat-8.0.28 /var/local/tomcat-latest
   sudo chown -R $user.$user /var/local/tomcat-latest
 
-  sudo cp /vagrant/etc/tomcat-latest /etc/init.d/
-  sudo chkconfig --add tomcat-latest
-  sudo chkconfig --level 2345 tomcat-latest on
+  sudo cp /vagrant/etc/tomcat-latest.service /etc/systemd/system/
+  sudo systemctl enable tomcat-latest
   sudo systemctl start tomcat-latest
 
   popd
@@ -198,9 +200,9 @@ install_elda() {
       done
       sudo chown -R $user.$user /var/local/elda
     popd
-    sudo cp /vagrant/etc/elda /etc/init.d/
-    sudo chkconfig --add elda
-    sudo chkconfig --level 2345 elda on
+	
+    sudo cp /vagrant/etc/elda.service /etc/systemd/system
+	sudo systemctl enable elda
     sudo systemctl start elda
 }
 
@@ -315,7 +317,11 @@ install_test_virtuoso() {
   then
     # store on the host machine, to fit in available disk size
     gunzip -c /vagrant/data/virtuoso6-test.db.gz > /vagrant/data/virtuosotest.db
-    sudo ln -s /vagrant/data/virtuosotest.db $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db
+  fi
+  
+  if [ ! -f $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db ]
+  then
+	sudo ln -s /vagrant/data/virtuosotest.db $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db
   fi
   sudo chown -R $user.$user $VIRTUOSO_HOME
 
@@ -327,8 +333,8 @@ install_test_virtuoso() {
   sudo sed -i "s/production/test/g" /etc/init.d/virtuoso7-test
   sudo sed -i "s/\/var\/local\/virtuoso\//\/var\/local\/test-virtuoso\//g" /etc/init.d/virtuoso7-test
 
-  sudo chkconfig --add virtuoso7-test
-  sudo chkconfig --level 2345 virtuoso7-test on
+  sudo cp /vagrant/etc/virtuoso7-test.service /etc/systemd/system/
+  #sudo systemctl enable virtuoso7-test
   sudo systemctl start virtuoso7-test
 
   popd
@@ -370,9 +376,8 @@ install_test_plone() {
   #sudo chkconfig --level 2345 plone-test on
   #sudo systemctl start plone-test
 
-  sudo cp /vagrant/etc/supervisord-test /etc/init.d
-  sudo chkconfig --add supervisord-test
-  sudo chkconfig --level 2345 supervisord-test on
+  sudo cp /vagrant/etc/supervisord-test.service /etc/systemd/system/
+  sudo systemctl enable supervisord-test
   sudo systemctl start supervisord-test
 
   popd
