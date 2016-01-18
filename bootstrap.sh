@@ -68,7 +68,7 @@ install_virtuoso() {
   sudo sed -i "/^NumberOfBuffers/c\NumberOfBuffers=170000" $VIRTUOSO_INI
   sudo sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
 
-  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/html\/download/' $VIRTUOSO_INI
+  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/html\/download/, \/var\/local\/cr\/apphome\/tmp, \/var\/local\/cr\/apphome\/staging/' $VIRTUOSO_INI
 
   sudo sed -i "/^ResultSetMaxRows/c\ResultSetMaxRows=1000000" $VIRTUOSO_INI
   sudo sed -i "/^MaxQueryCostEstimationTime/c\MaxQueryCostEstimationTime=5000; in seconds" $VIRTUOSO_INI
@@ -217,6 +217,52 @@ install_sparql_client() {
     popd
 }
 
+#
+# Installation script of Content Registry.
+#
+
+install_contreg() {
+
+	# Prepare CR application home and build directories.
+	mkdir -p /var/local/cr
+	mkdir -p /var/local/cr/build
+	mkdir -p /var/local/cr/apphome
+	mkdir -p /var/local/cr/apphome/acl
+	mkdir -p /var/local/cr/apphome/filestore
+	mkdir -p /var/local/cr/apphome/staging
+	mkdir -p /var/local/cr/apphome/tmp
+
+	# Go into CR build directory and checkout CR source code from GitHub.
+	pushd /var/local/cr/build
+	git clone https://github.com/digital-agenda-data/scoreboard.contreg.git
+	cd scoreboard.contreg
+	git checkout upgrade-2016-incl-sesame-and-liquibase-v7201
+
+	# Prepare local.properties.
+	cp sample.properties local.properties
+	sudo sed -i "/^\s*application.homeDir/c\application.homeDir\=/var\/local\/cr\/apphome" local.properties
+	sudo sed -i "/^\s*application.homeURL/c\application.homeURL\=http:\/\/digital-agenda-data.eu\/data" local.properties
+
+	# Build with Maven and ensure Liquibase changelog is synced.
+	mvn -Dmaven.test.skip=true clean install
+	mvn liquibase:changelogSync
+
+	# Deploy to Tomcat.
+	sudo rm -rf /var/local/tomcat-latest/webapps/data
+	sudo rm -rf /var/local/tomcat-latest/work/Catalina/localhost/data
+	sudo rm -rf /var/local/tomcat-latest/conf/Catalina/localhost/data.xml
+	sudo cp ./target/cr-das.war /var/local/tomcat-latest/webapps/data.war
+
+	# Ensure the correct owner of CR application directory.
+	sudo chown -R $user.$user /var/local/cr
+
+	# Restart Tomcat.
+	sudo systemctl start tomcat-latest
+
+	# Pop the current directory.
+	popd
+}
+
 ### TEST APPLICATIONS ###
 
 install_test_virtuoso() {
@@ -250,7 +296,7 @@ install_test_virtuoso() {
   sudo sed -i "/^NumberOfBuffers/c\NumberOfBuffers=170000" $VIRTUOSO_INI
   sudo sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
 
-  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/test-html\/download' $VIRTUOSO_INI
+ sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/test-html\/download/, \/var\/local\/crtest\/apphome\/tmp, \/var\/local\/crtest\/apphome\/staging/' $VIRTUOSO_INI
 
   sudo sed -i "/^ResultSetMaxRows/c\ResultSetMaxRows=1000000" $VIRTUOSO_INI
   sudo sed -i "/^MaxQueryCostEstimationTime/c\MaxQueryCostEstimationTime=5000; in seconds" $VIRTUOSO_INI
@@ -349,46 +395,67 @@ install_test_sparql_client() {
 }
 
 #
-# Installation script of Content Registry.
+# Installation script for the test-instance of Content Registry, including test-Tomcat.
 #
+install_test_contreg() {
 
-install_contreg() {
+	# Prepare CR-test application home and build directories.
+	mkdir -p /var/local/crtest
+	mkdir -p /var/local/crtest/build
+	mkdir -p /var/local/crtest/apphome
+	mkdir -p /var/local/crtest/apphome/acl
+	mkdir -p /var/local/crtest/apphome/filestore
+	mkdir -p /var/local/crtest/apphome/staging
+	mkdir -p /var/local/crtest/apphome/tmp
 
-	# Prepare CR application home and build directories.
-	mkdir -p /var/local/cr
-	mkdir -p /var/local/cr/build
-	mkdir -p /var/local/cr/apphome
-	mkdir -p /var/local/cr/apphome/acl
-	mkdir -p /var/local/cr/apphome/filestore
-	mkdir -p /var/local/cr/apphome/staging
-	mkdir -p /var/local/cr/apphome/tmp
+	# Install Tomcat's test-instance.
+	tar xvf /vagrant/bin/apache-tomcat-8.0.28.tar.gz -C /var/local/crtest
+	sudo chown -R $user.$user /var/local/crtest/apache-tomcat-8.0.28
+	ln -s /var/local/crtest/apache-tomcat-8.0.28 /var/local/tomcat-test
+	sudo chown -R $user.$user /var/local/tomcat-test
 
-	# Go into CR build directory and checkout CR source code from GitHub.
-	pushd /var/local/cr/build
+	# Configure test-instance's server.xml
+	sudo sed -i '/^\s*<Server port="8005"/c\<Server port="8006" shutdown="SHUTDOWN">' /var/local/tomcat-test/conf/server.xml
+	sudo sed -i 's|Connector port="8080"|Connector port="8081"|g' /var/local/tomcat-test/conf/server.xml
+	sudo sed -i 's|redirectPort="8443"|redirectPort="8444"|g' /var/local/tomcat-test/conf/server.xml
+	sudo sed -i 's|Connector port="8009"|Connector port="8010"|g' /var/local/tomcat-test/conf/server.xml
+
+	# Create test-tomcat service, start it.
+	sudo cp /vagrant/etc/tomcat-test /etc/init.d/
+	sudo chkconfig --add tomcat-test
+	sudo chkconfig --level 2345 tomcat-test on
+	sudo systemctl start tomcat-test
+
+	# Go into test-CR build directory and checkout CR source code from GitHub.
+	pushd /var/local/crtest/build
 	git clone https://github.com/digital-agenda-data/scoreboard.contreg.git
 	cd scoreboard.contreg
 	git checkout upgrade-2016-incl-sesame-and-liquibase-v7201
 
 	# Prepare local.properties.
-	cp sample.properties local.properties
-	sudo sed -i "/^\s*application.homeDir/c\application.homeDir\=/var\/local\/cr\/apphome" local.properties
-	sudo sed -i "/^\s*application.homeURL/c\application.homeURL\=/http:\/\/digital-agenda-data.eu\/data" local.properties
+	sudo cp sample.properties local.properties
+	sudo sed -i "/^\s*application.homeDir/c\application.homeDir\=/var\/local\/crtest\/apphome" local.properties
+	sudo sed -i "/^\s*application.homeURL/c\application.homeURL\=http:\/\/test-cr.digital-agenda-data.eu" local.properties
+	sudo sed -i "s/localhost:1111/localhost:1112/g" local.properties
 
 	# Build with Maven and ensure Liquibase changelog is synced.
 	mvn -Dmaven.test.skip=true clean install
 	mvn liquibase:changelogSync
 
+	# Backup Tomcat's default ROOT webapp.
+	sudo mv /var/local/tomcat-test/webapps/ROOT /var/local/tomcat-test/webapps/ROOT_ORIG
+
 	# Deploy to Tomcat.
-	rm -rf /var/local/tomcat-latest/webapps/data
-	rm -rf /var/local/tomcat-latest/work/Catalina/localhost/data
-	rm -rf /var/local/tomcat-latest/conf/Catalina/localhost/data.xml
-	cp ./target/cr-das.war /var/local/tomcat-latest/webapps/data.war
+	sudo rm -rf /var/local/tomcat-test/webapps/ROOT
+	sudo rm -rf /var/local/tomcat-test/work/Catalina/localhost/ROOT*
+	sudo rm -rf /var/local/tomcat-test/conf/Catalina/localhost/ROOT.xml
+	sudo cp ./target/cr-das.war /var/local/tomcat-test/webapps/ROOT.war
 
 	# Ensure the correct owner of CR application directory.
-	sudo chown -R $user.$user /var/local/cr
+	sudo chown -R $user.$user /var/local/crtest
 
 	# Restart Tomcat.
-	sudo systemctl start tomcat-latest
+	sudo systemctl start tomcat-test
 
 	# Pop the current directory.
 	popd
@@ -422,6 +489,13 @@ if [ ! -f "/usr/bin/java" ]; then
     install_java
 else
     echo "Java already installed"
+fi
+
+# Install Content Registry.
+if [ ! -f "/usr/local/cr" ]; then
+    install_contreg
+else
+    echo "Content Registry already installed"
 fi
 
 # Install ELDA.
@@ -458,4 +532,11 @@ if [ ! -f "/var/local/test-sparql-browser" ]; then
     install_test_sparql_client
 else
     echo "sparql-browser (test) already installed"
+fi
+
+# Install test-CR.
+if [ ! -f "/usr/local/crtest" ]; then
+    install_test_contreg
+else
+    echo "Content Registry test instance already installed!"
 fi

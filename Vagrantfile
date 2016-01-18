@@ -25,6 +25,7 @@ Vagrant.configure(2) do |config|
     "8081" => 28081, # cr test (tomcat)
     "8082" => 28082, # elda prod (jetty)
     "8890" => 28890, # virtuoso web console
+    "8891" => 28891, # virtuoso web console
     "1111" => 21111, # virtuoso isql prod
     "1112" => 21112, # virtuoso isql test
     "8441" => 28441, # Plone
