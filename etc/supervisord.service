@@ -1,0 +1,13 @@
+[Unit]
+Description=Plone content management system
+After=network.target
+
+[Service]
+User=scoreboard
+Group=scoreboard
+Type=forking
+ExecStart=/var/local/plone/bin/supervisord --pidfile /var/local/plone/var/supervisord.pid
+ExecStop=/var/local/plone/bin/supervisorctl stop all && /var/local/plone/bin/supervisorctl shutdown
+
+[Install]
+WantedBy=multi-user.target

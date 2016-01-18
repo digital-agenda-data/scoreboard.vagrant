@@ -1,0 +1,11 @@
+[Unit]
+Description=Virutoso 7 production server
+
+[Service]
+User=scoreboard
+Group=scoreboard
+Type=forking
+ExecStart=/var/local/virtuoso/bin/virtuoso-t +configfile /var/local/virtuoso/var/lib/virtuoso/db/virtuoso.ini
+
+[Install]
+WantedBy=multi-user.target

@@ -83,8 +83,11 @@ install_virtuoso() {
   if [ ! -f /vagrant/data/virtuoso.db ]
   then
     # store on the host machine, to fit in available disk size
-    gunzip -c /vagrant/data/virtuoso6-prod.db.gz > /vagrant/data/virtuoso.db
-    sudo ln -s /vagrant/data/virtuoso.db $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db
+  fi
+  
+  if [ ! -f $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db ]
+  then
+	sudo ln -s /vagrant/data/virtuoso.db $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db
   fi
 
   sudo chown -R $user.$user $VIRTUOSO_HOME
@@ -93,9 +96,10 @@ install_virtuoso() {
   sudo echo 'export PATH=$PATH:/var/local/virtuoso/bin' | sudo tee --append /home/$user/.bashrc > /dev/null
   sudo echo 'export PATH=$PATH:/var/local/virtuoso/bin' | sudo tee --append /home/vagrant/.bashrc > /dev/null
 
-  sudo cp /vagrant/etc/virtuoso7 /etc/init.d
-  sudo chkconfig --add virtuoso7
-  sudo chkconfig --level 2345 virtuoso7 on
+  sudo cp /vagrant/etc/virtuoso7.service /etc/systemd/system/
+  #sudo systemctl enable virtuoso7
+
+
   sudo systemctl start virtuoso7
 
   popd
@@ -127,9 +131,8 @@ install_plone() {
   sudo chmod g+w /var/www/html -R
   sudo systemctl reload httpd
 
-  sudo cp /vagrant/etc/supervisord /etc/init.d
-  sudo chkconfig --add supervisord
-  sudo chkconfig --level 2345 supervisord on
+  sudo cp /vagrant/etc/supervisord.service /etc/systemd/system/
+  sudo systemctl enable supervisord
   sudo systemctl start supervisord
 
   popd
@@ -167,9 +170,8 @@ EOF
   ln -s /var/local/apache-tomcat-8.0.28 /var/local/tomcat-latest
   sudo chown -R $user.$user /var/local/tomcat-latest
 
-  sudo cp /vagrant/etc/tomcat-latest /etc/init.d/
-  sudo chkconfig --add tomcat-latest
-  sudo chkconfig --level 2345 tomcat-latest on
+  sudo cp /vagrant/etc/tomcat-latest.service /etc/systemd/system/
+  sudo systemctl enable tomcat-latest
   sudo systemctl start tomcat-latest
 
   popd
@@ -198,9 +200,9 @@ install_elda() {
       done
       sudo chown -R $user.$user /var/local/elda
     popd
-    sudo cp /vagrant/etc/elda /etc/init.d/
-    sudo chkconfig --add elda
-    sudo chkconfig --level 2345 elda on
+	
+    sudo cp /vagrant/etc/elda.service /etc/systemd/system
+	sudo systemctl enable elda
     sudo systemctl start elda
 }
 
@@ -223,6 +225,7 @@ install_sparql_client() {
 
 install_contreg() {
 
+	echo "Preparing production CR's application home and build directories..."
 	# Prepare CR application home and build directories.
 	mkdir -p /var/local/cr
 	mkdir -p /var/local/cr/build
@@ -231,6 +234,8 @@ install_contreg() {
 	mkdir -p /var/local/cr/apphome/filestore
 	mkdir -p /var/local/cr/apphome/staging
 	mkdir -p /var/local/cr/apphome/tmp
+
+	echo "Cloning and building production CR source code..."
 
 	# Go into CR build directory and checkout CR source code from GitHub.
 	pushd /var/local/cr/build
@@ -245,7 +250,11 @@ install_contreg() {
 
 	# Build with Maven and ensure Liquibase changelog is synced.
 	mvn -Dmaven.test.skip=true clean install
+
+	echo "Syncing production CR's Liquibase changelog ..."
 	mvn liquibase:changelogSync
+
+	echo "Deploying production CR to production Tomcat ..."
 
 	# Deploy to Tomcat.
 	sudo rm -rf /var/local/tomcat-latest/webapps/data
@@ -256,6 +265,7 @@ install_contreg() {
 	# Ensure the correct owner of CR application directory.
 	sudo chown -R $user.$user /var/local/cr
 
+	echo "Restarting production Tomcat ..."
 	# Restart Tomcat.
 	sudo systemctl start tomcat-latest
 
@@ -315,7 +325,11 @@ install_test_virtuoso() {
   then
     # store on the host machine, to fit in available disk size
     gunzip -c /vagrant/data/virtuoso6-test.db.gz > /vagrant/data/virtuosotest.db
-    sudo ln -s /vagrant/data/virtuosotest.db $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db
+  fi
+  
+  if [ ! -f $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db ]
+  then
+	sudo ln -s /vagrant/data/virtuosotest.db $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db
   fi
   sudo chown -R $user.$user $VIRTUOSO_HOME
 
@@ -327,8 +341,8 @@ install_test_virtuoso() {
   sudo sed -i "s/production/test/g" /etc/init.d/virtuoso7-test
   sudo sed -i "s/\/var\/local\/virtuoso\//\/var\/local\/test-virtuoso\//g" /etc/init.d/virtuoso7-test
 
-  sudo chkconfig --add virtuoso7-test
-  sudo chkconfig --level 2345 virtuoso7-test on
+  sudo cp /vagrant/etc/virtuoso7-test.service /etc/systemd/system/
+  #sudo systemctl enable virtuoso7-test
   sudo systemctl start virtuoso7-test
 
   popd
@@ -370,9 +384,8 @@ install_test_plone() {
   #sudo chkconfig --level 2345 plone-test on
   #sudo systemctl start plone-test
 
-  sudo cp /vagrant/etc/supervisord-test /etc/init.d
-  sudo chkconfig --add supervisord-test
-  sudo chkconfig --level 2345 supervisord-test on
+  sudo cp /vagrant/etc/supervisord-test.service /etc/systemd/system/
+  sudo systemctl enable supervisord-test
   sudo systemctl start supervisord-test
 
   popd
@@ -399,14 +412,8 @@ install_test_sparql_client() {
 #
 install_test_contreg() {
 
-	# Prepare CR-test application home and build directories.
 	mkdir -p /var/local/crtest
-	mkdir -p /var/local/crtest/build
-	mkdir -p /var/local/crtest/apphome
-	mkdir -p /var/local/crtest/apphome/acl
-	mkdir -p /var/local/crtest/apphome/filestore
-	mkdir -p /var/local/crtest/apphome/staging
-	mkdir -p /var/local/crtest/apphome/tmp
+	echo "Installing test Tomcat..."
 
 	# Install Tomcat's test-instance.
 	tar xvf /vagrant/bin/apache-tomcat-8.0.28.tar.gz -C /var/local/crtest
@@ -414,17 +421,32 @@ install_test_contreg() {
 	ln -s /var/local/crtest/apache-tomcat-8.0.28 /var/local/tomcat-test
 	sudo chown -R $user.$user /var/local/tomcat-test
 
+	echo "Configuring test Tomcat's servr.xml ..."
+
 	# Configure test-instance's server.xml
 	sudo sed -i '/^\s*<Server port="8005"/c\<Server port="8006" shutdown="SHUTDOWN">' /var/local/tomcat-test/conf/server.xml
 	sudo sed -i 's|Connector port="8080"|Connector port="8081"|g' /var/local/tomcat-test/conf/server.xml
 	sudo sed -i 's|redirectPort="8443"|redirectPort="8444"|g' /var/local/tomcat-test/conf/server.xml
 	sudo sed -i 's|Connector port="8009"|Connector port="8010"|g' /var/local/tomcat-test/conf/server.xml
 
+	echo "Creating test Tomcat's service ..."
+
 	# Create test-tomcat service, start it.
 	sudo cp /vagrant/etc/tomcat-test /etc/init.d/
 	sudo chkconfig --add tomcat-test
 	sudo chkconfig --level 2345 tomcat-test on
-	sudo systemctl start tomcat-test
+
+	echo "Preparing test CR's application home and build directories..."
+
+	# Prepare CR-test application home and build directories.
+	mkdir -p /var/local/crtest/build
+	mkdir -p /var/local/crtest/apphome
+	mkdir -p /var/local/crtest/apphome/acl
+	mkdir -p /var/local/crtest/apphome/filestore
+	mkdir -p /var/local/crtest/apphome/staging
+	mkdir -p /var/local/crtest/apphome/tmp
+
+	echo "Cloning and building test CR's source code..."
 
 	# Go into test-CR build directory and checkout CR source code from GitHub.
 	pushd /var/local/crtest/build
@@ -440,7 +462,11 @@ install_test_contreg() {
 
 	# Build with Maven and ensure Liquibase changelog is synced.
 	mvn -Dmaven.test.skip=true clean install
+
+	echo "Syncing test CR's Liquibase changelog ..."
 	mvn liquibase:changelogSync
+
+	echo "Deploying test CR to test Tomcat ..."
 
 	# Backup Tomcat's default ROOT webapp.
 	sudo mv /var/local/tomcat-test/webapps/ROOT /var/local/tomcat-test/webapps/ROOT_ORIG
@@ -454,6 +480,7 @@ install_test_contreg() {
 	# Ensure the correct owner of CR application directory.
 	sudo chown -R $user.$user /var/local/crtest
 
+	echo "Restarting test Tomcat ..."
 	# Restart Tomcat.
 	sudo systemctl start tomcat-test
 
@@ -486,30 +513,34 @@ fi
 
 # Install Java + Tomcat.
 if [ ! -f "/usr/bin/java" ]; then
+	echo "Installing Java + Maven + Tomcat..."
     install_java
 else
     echo "Java already installed"
 fi
 
 # Install Content Registry.
-if [ ! -f "/usr/local/cr" ]; then
+if [ ! -d "/var/local/cr" ]; then
+	echo "Installing Content Registry (production) ..."
     install_contreg
 else
     echo "Content Registry already installed"
 fi
 
 # Install ELDA.
-if [ ! -f "/var/local/elda" ]; then
+if [ ! -d "/var/local/elda" ]; then
+	echo "Installing ELDA (production) ..."
     install_elda
 else
     echo "Elda already installed"
 fi
 
 # Install SPARQL browser.
-if [ ! -f "/var/local/sparql-browser" ]; then
+if [ ! -d "/var/local/sparql-browser" ]; then
+	echo "Installing SPARQL browser (production) ..."
     install_sparql_client
 else
-    echo "sparql-browser (production) already installed"
+    echo "SPARQL browser (production) already installed"
 fi
 
 ## TEST
@@ -528,14 +559,16 @@ else
     echo "Plone (test) already installed"
 fi
 
-if [ ! -f "/var/local/test-sparql-browser" ]; then
+if [ ! -d "/var/local/test-sparql-browser" ]; then
+	echo "Installing SPARQL browser (test) ..."
     install_test_sparql_client
 else
-    echo "sparql-browser (test) already installed"
+    echo "SPARQL browser (test) already installed"
 fi
 
 # Install test-CR.
-if [ ! -f "/usr/local/crtest" ]; then
+if [ ! -d "/var/local/crtest" ]; then
+	echo "Installing Content Registry (test) ..."
     install_test_contreg
 else
     echo "Content Registry test instance already installed!"

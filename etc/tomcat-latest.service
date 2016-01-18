@@ -1,0 +1,22 @@
+# Systemd unit file for tomcat
+[Unit]
+Description=Apache Tomcat Web Application Container
+After=syslog.target network.target
+
+[Service]
+Type=forking
+
+Environment=JAVA_HOME=/usr/java/latest
+Environment=CATALINA_HOME=/var/local/tomcat-latest
+Environment=CATALINA_PID=/var/local/tomcat-latest/apache-tomcat.pid
+Environment=CATALINA_BASE=/var/local/tomcat-latest
+Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+ExecStart=/var/local/tomcat-latest/bin/startup.sh
+ExecStop=/var/local/tomcat-latest/bin/shutdown.sh
+TimeoutStopSec=15
+
+User=scoreboard
+Group=scoreboard
+
+[Install]
+WantedBy=multi-user.target
