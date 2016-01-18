@@ -5,6 +5,7 @@
 
 ## Box
 The CentOS 7.2 box is created using packer: https://github.com/cristiroma/centos-7-minimal
+
 ``vagrant box add cristiroma/centos-7-minimal``
 
 * Install vagrant and plugins
