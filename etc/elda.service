@@ -1,0 +1,11 @@
+[Unit]
+Description=Elda production
+
+[Service]
+User=scoreboard
+Group=scoreboard
+WorkingDirectory=/var/local/elda
+ExecStart=/usr/bin/java -jar start.jar
+
+[Install]
+WantedBy=multi-user.target
