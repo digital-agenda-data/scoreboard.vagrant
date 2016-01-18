@@ -47,3 +47,4 @@ Solution => Restart buildout
 * Export scripts
 * Piwik
 * Automatic startup for sparql-client
+* http://test.digital-agenda-data.eu/datasets/digital_agenda_scoreboard_key_indicators/dimension_options?dimension=indicator&indicator-group=eHealth

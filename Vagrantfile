@@ -25,13 +25,13 @@ Vagrant.configure(2) do |config|
     "8081" => 28081, # cr test (tomcat)
     "8082" => 28082, # elda prod (jetty)
     "8890" => 28890, # virtuoso web console
-    "8891" => 28891, # virtuoso web console
+    "8891" => 28891, # virtuoso test web console
     "1111" => 21111, # virtuoso isql prod
     "1112" => 21112, # virtuoso isql test
-    "8441" => 28441, # Plone
-    "8442" => 28442, # Plone
-    "8443" => 28443, # Plone
-    "8448" => 28448, # Plone
+    "8441" => 28441, # Plone (prod1)
+    "8442" => 28442, # Plone (prod2)
+    "8443" => 28443, # Plone (prod3)
+    "8448" => 28448, # Plone (test)
   }
   TCP_PORTS_LIST.each do |guest, host|
     config.vm.network "forwarded_port", guest: "#{guest}", host: "#{host}", protocol: "tcp"

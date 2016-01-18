@@ -60,7 +60,7 @@ install_virtuoso() {
   fi
   # update config files and data files
   VIRTUOSO_INI=$VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini
-  sudo cp $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini.original
+  sudo cp $VIRTUOSO_INI $VIRTUOSO_INI.original
   sudo sed -i "/HTTPLogFile/c\HTTPLogFile\=/var\/local\/virtuoso\/production.log" $VIRTUOSO_INI
   sudo sed -i "/^MaxClientConnections/c\MaxClientConnections=4" $VIRTUOSO_INI
   sudo sed -i "/^ServerThreads/c\ServerThreads=4" $VIRTUOSO_INI
@@ -288,7 +288,7 @@ install_test_virtuoso() {
   fi
   # update config files and data files
   VIRTUOSO_INI=$VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini
-  sudo cp $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.ini.original
+  sudo cp $VIRTUOSO_INI $VIRTUOSO_INI.original
   sudo sed -i "/HTTPLogFile/c\HTTPLogFile\=/var\/local\/virtuoso\/test.log" $VIRTUOSO_INI
   sudo sed -i "/^MaxClientConnections/c\MaxClientConnections=4" $VIRTUOSO_INI
   sudo sed -i "/^ServerThreads/c\ServerThreads=4" $VIRTUOSO_INI
