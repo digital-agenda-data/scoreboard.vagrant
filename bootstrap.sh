@@ -68,7 +68,7 @@ install_virtuoso() {
   sudo sed -i "/^NumberOfBuffers/c\NumberOfBuffers=170000" $VIRTUOSO_INI
   sudo sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
 
-  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/html\/download/, \/var\/local\/cr\/apphome\/tmp, \/var\/local\/cr\/apphome\/staging/' $VIRTUOSO_INI
+  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/html\/download\/, \/var\/local\/cr\/apphome\/tmp, \/var\/local\/cr\/apphome\/staging/' $VIRTUOSO_INI
 
   sudo sed -i "/^ResultSetMaxRows/c\ResultSetMaxRows=1000000" $VIRTUOSO_INI
   sudo sed -i "/^MaxQueryCostEstimationTime/c\MaxQueryCostEstimationTime=5000; in seconds" $VIRTUOSO_INI
@@ -78,18 +78,6 @@ install_virtuoso() {
   # do not load the default plugins
   sudo sed -i 's/^\(Load[1-3]\)/;\1/g' $VIRTUOSO_INI
 
-  # copy data files
-  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso6-prod.db.gz
-  if [ ! -f /vagrant/data/virtuoso.db ]
-  then
-    # store on the host machine, to fit in available disk size
-  fi
-  
-  if [ ! -f $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db ]
-  then
-	sudo ln -s /vagrant/data/virtuoso.db $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db
-  fi
-
   sudo chown -R $user.$user $VIRTUOSO_HOME
 
   # Put virtuoso bin into PATH.
@@ -98,9 +86,13 @@ install_virtuoso() {
 
   sudo cp /vagrant/etc/virtuoso7.service /etc/systemd/system/
   #sudo systemctl enable virtuoso7
-
-
   sudo systemctl start virtuoso7
+  
+  # download the graph and import it
+  rm -rf /tmp/prod_export_graph
+  wget -nv -N -P /tmp/ http://85.9.22.69/scoreboard/download/prod_export_graph.tgz
+  tar xzf /tmp/prod_export_graph.tgz -C /tmp --no-same-owner
+  $VIRTUOSO_HOME/bin/isql 1111 dba dba /vagrant/misc/import_prod.sql
 
   popd
 }
@@ -311,7 +303,7 @@ install_test_virtuoso() {
   sudo sed -i "/^NumberOfBuffers/c\NumberOfBuffers=170000" $VIRTUOSO_INI
   sudo sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
 
-  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/test-html\/download/, \/var\/local\/crtest\/apphome\/tmp, \/var\/local\/crtest\/apphome\/staging/' $VIRTUOSO_INI
+  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/test-html\/download\/, \/var\/local\/crtest\/apphome\/tmp, \/var\/local\/crtest\/apphome\/staging/' $VIRTUOSO_INI
 
   sudo sed -i "/^ResultSetMaxRows/c\ResultSetMaxRows=1000000" $VIRTUOSO_INI
   sudo sed -i "/^MaxQueryCostEstimationTime/c\MaxQueryCostEstimationTime=5000; in seconds" $VIRTUOSO_INI
@@ -324,32 +316,21 @@ install_test_virtuoso() {
   # do not load the default plugins
   sudo sed -i 's/^\(Load[1-3]\)/;\1/g' $VIRTUOSO_INI
 
-  # copy data file for test instance
-  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/virtuoso6-test.db.gz
-  if [ ! -f /vagrant/data/virtuosotest.db ]
-  then
-    # store on the host machine, to fit in available disk size
-    gunzip -c /vagrant/data/virtuoso6-test.db.gz > /vagrant/data/virtuosotest.db
-  fi
-  
-  if [ ! -f $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db ]
-  then
-	sudo ln -s /vagrant/data/virtuosotest.db $VIRTUOSO_HOME/var/lib/virtuoso/db/virtuoso.db
-  fi
+
   sudo chown -R $user.$user $VIRTUOSO_HOME
 
   # Put virtuoso bin into PATH.
   sudo echo 'export PATH=$PATH:/var/local/test-virtuoso/bin' | sudo tee --append /home/$user/.bashrc > /dev/null
   sudo echo 'export PATH=$PATH:/var/local/test-virtuoso/bin' | sudo tee --append /home/vagrant/.bashrc > /dev/null
 
-  sudo cp /vagrant/etc/virtuoso7 /etc/init.d/virtuoso7-test
-  sudo sed -i "s/production/test/g" /etc/init.d/virtuoso7-test
-  sudo sed -i "s/\/var\/local\/virtuoso\//\/var\/local\/test-virtuoso\//g" /etc/init.d/virtuoso7-test
-
   sudo cp /vagrant/etc/virtuoso7-test.service /etc/systemd/system/
   #sudo systemctl enable virtuoso7-test
   sudo systemctl start virtuoso7-test
 
+  rm -rf /tmp/test_export_graph
+  wget -nv -N -P /tmp/ http://85.9.22.69/scoreboard/download/test_export_graph.tgz
+  tar xzf /tmp/test_export_graph.tgz -C /tmp --no-same-owner
+  $VIRTUOSO_HOME/bin/isql 1112 dba dba /vagrant/misc/import_test.sql 
   popd
 }
 
