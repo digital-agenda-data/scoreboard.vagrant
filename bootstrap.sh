@@ -125,6 +125,11 @@ install_plone() {
 
   sudo chown -R $user.$user /var/local/plone
 
+  #create cron for data export
+  sudo chmod +x /var/local/plone/export/export_datasets_prod.sh
+  line="30 23 * * * /var/local/plone/export/export_datasets_prod.sh"
+  (sudo crontab -u scoreboard -l; echo "$line" ) | sudo crontab -u scoreboard -
+
   sudo cp /vagrant/etc/scoreboard-prod.conf /etc/httpd/conf.d
   sudo mkdir -p /var/www/html/download
   sudo chown apache.scoreboard /var/www/html -R
@@ -306,7 +311,7 @@ install_test_virtuoso() {
   sudo sed -i "/^NumberOfBuffers/c\NumberOfBuffers=170000" $VIRTUOSO_INI
   sudo sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
 
- sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/test-html\/download/, \/var\/local\/crtest\/apphome\/tmp, \/var\/local\/crtest\/apphome\/staging/' $VIRTUOSO_INI
+  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/test-html\/download/, \/var\/local\/crtest\/apphome\/tmp, \/var\/local\/crtest\/apphome\/staging/' $VIRTUOSO_INI
 
   sudo sed -i "/^ResultSetMaxRows/c\ResultSetMaxRows=1000000" $VIRTUOSO_INI
   sudo sed -i "/^MaxQueryCostEstimationTime/c\MaxQueryCostEstimationTime=5000; in seconds" $VIRTUOSO_INI
@@ -372,6 +377,11 @@ install_test_plone() {
   tar -xzvf /vagrant/data/plone-storage-test.tar.gz --directory=/var/local/$HOME_DIR/var
 
   sudo chown -R $user.$user /var/local/$HOME_DIR
+
+  #create cron for data export
+  sudo chmod +x /var/local/test-plone/export/export_datasets_test.sh
+  line="15 23 * * * /var/local/test-plone/export/export_datasets_test.sh"
+  (sudo crontab -u scoreboard -l; echo "$line" ) | sudo crontab -u scoreboard -
 
   sudo cp /vagrant/etc/scoreboard-test.conf /etc/httpd/conf.d
   sudo mkdir -p /var/www/test-html/download
