@@ -164,10 +164,10 @@ EOF
   echo "Apache Maven installed in $M2_HOME"
 
   # install Apache Tomcat 8
-  wget -nv -N -P /vagrant/bin http://archive.apache.org/dist/tomcat/tomcat-8/v8.0.28/bin/apache-tomcat-8.0.28.tar.gz
-  tar xvf /vagrant/bin/apache-tomcat-8.0.28.tar.gz -C /var/local
-  sudo chown -R $user.$user /var/local/apache-tomcat-8.0.28
-  ln -s /var/local/apache-tomcat-8.0.28 /var/local/tomcat-latest
+  wget -nv -N -P /vagrant/bin http://archive.apache.org/dist/tomcat/tomcat-8/v8.0.30/bin/apache-tomcat-8.0.30.tar.gz
+  tar xvf /vagrant/bin/apache-tomcat-8.0.30.tar.gz -C /var/local
+  sudo chown -R $user.$user /var/local/apache-tomcat-8.0.30
+  ln -s /var/local/apache-tomcat-8.0.30 /var/local/tomcat-latest
   sudo chown -R $user.$user /var/local/tomcat-latest
 
   sudo cp /vagrant/etc/tomcat-latest.service /etc/systemd/system/
@@ -416,12 +416,12 @@ install_test_contreg() {
 	echo "Installing test Tomcat..."
 
 	# Install Tomcat's test-instance.
-	tar xvf /vagrant/bin/apache-tomcat-8.0.28.tar.gz -C /var/local/crtest
-	sudo chown -R $user.$user /var/local/crtest/apache-tomcat-8.0.28
-	ln -s /var/local/crtest/apache-tomcat-8.0.28 /var/local/tomcat-test
+	tar xvf /vagrant/bin/apache-tomcat-8.0.30.tar.gz -C /var/local/crtest
+	sudo chown -R $user.$user /var/local/crtest/apache-tomcat-8.0.30
+	ln -s /var/local/crtest/apache-tomcat-8.0.30 /var/local/tomcat-test
 	sudo chown -R $user.$user /var/local/tomcat-test
 
-	echo "Configuring test Tomcat's servr.xml ..."
+	echo "Configuring test Tomcat's server.xml ..."
 
 	# Configure test-instance's server.xml
 	sudo sed -i '/^\s*<Server port="8005"/c\<Server port="8006" shutdown="SHUTDOWN">' /var/local/tomcat-test/conf/server.xml
