@@ -46,3 +46,5 @@ Solution => Restart buildout
 
 * Automatic startup for sparql-client
 * Not disable selinux
+* Refactor locations of crtest and apache tomcat
+* tomcat-test.service

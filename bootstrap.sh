@@ -149,10 +149,10 @@ install_java() {
   wget -nv -N -P /vagrant/bin http://apache.javapipe.com/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz
   tar xvf /vagrant/bin/apache-maven-3.3.3-bin.tar.gz -C /var/local
   read -r -d '' RCLINES <<- 'EOF'
-	export M2_HOME=/var/local/apache-maven-3.3.3
-	export M2=$M2_HOME/bin
-	export PATH=$M2:$PATH
-	export JAVA_HOME=/usr/java/latest
+    export M2_HOME=/var/local/apache-maven-3.3.3
+    export M2=$M2_HOME/bin
+    export PATH=$M2:$PATH
+    export JAVA_HOME=/usr/java/latest
 EOF
   echo "$RCLINES" >> /home/$user/.bashrc
   echo "$RCLINES" >> /home/vagrant/.bashrc
@@ -197,13 +197,15 @@ install_elda() {
       done
       sudo chown -R $user.$user /var/local/elda
     popd
-	
+
     sudo cp /vagrant/etc/elda.service /etc/systemd/system
-	sudo systemctl enable elda
+    sudo systemctl enable elda
     sudo systemctl start elda
 }
 
 install_sparql_client() {
+    curl https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py | sudo python -
+    sudo yum install -y python-virtualenv
     pushd /var/local
       git clone https://github.com/digital-agenda-data/sparql-browser.git
       cd sparql-browser
@@ -222,52 +224,56 @@ install_sparql_client() {
 
 install_contreg() {
 
-	echo "Preparing production CR's application home and build directories..."
-	# Prepare CR application home and build directories.
-	mkdir -p /var/local/cr
-	mkdir -p /var/local/cr/build
-	mkdir -p /var/local/cr/apphome
-	mkdir -p /var/local/cr/apphome/acl
-	mkdir -p /var/local/cr/apphome/filestore
-	mkdir -p /var/local/cr/apphome/staging
-	mkdir -p /var/local/cr/apphome/tmp
+    echo "Preparing production CR's application home and build directories..."
+    # Prepare CR application home and build directories.
+    mkdir -p /var/local/cr
+    mkdir -p /var/local/cr/build
+    mkdir -p /var/local/cr/apphome
+    mkdir -p /var/local/cr/apphome/acl
+    mkdir -p /var/local/cr/apphome/filestore
+    mkdir -p /var/local/cr/apphome/staging
+    mkdir -p /var/local/cr/apphome/tmp
 
-	echo "Cloning and building production CR source code..."
+    echo "Cloning and building production CR source code..."
 
-	# Go into CR build directory and checkout CR source code from GitHub.
-	pushd /var/local/cr/build
-	git clone https://github.com/digital-agenda-data/scoreboard.contreg.git
-	cd scoreboard.contreg
-	git checkout upgrade-2016-incl-sesame-and-liquibase-v7201
+    # Go into CR build directory and checkout CR source code from GitHub.
+    pushd /var/local/cr/build
+    git clone https://github.com/digital-agenda-data/scoreboard.contreg.git
+    cd scoreboard.contreg
+    git checkout upgrade-2016-incl-sesame-and-liquibase-v7201
 
-	# Prepare local.properties.
-	cp sample.properties local.properties
-	sudo sed -i "/^\s*application.homeDir/c\application.homeDir\=/var\/local\/cr\/apphome" local.properties
-	sudo sed -i "/^\s*application.homeURL/c\application.homeURL\=http:\/\/digital-agenda-data.eu\/data" local.properties
+    # Prepare local.properties.
+    cp sample.properties local.properties
+    sudo sed -i "/^\s*application.homeDir/c\application.homeDir\=/var\/local\/cr\/apphome" local.properties
+    sudo sed -i "/^\s*application.homeURL/c\application.homeURL\=http:\/\/digital-agenda-data.eu\/data" local.properties
 
-	# Build with Maven and ensure Liquibase changelog is synced.
-	mvn -Dmaven.test.skip=true clean install
+    # Build with Maven and ensure Liquibase changelog is synced.
+    mvn -Dmaven.test.skip=true clean install
 
-	echo "Syncing production CR's Liquibase changelog ..."
-	mvn liquibase:changelogSync
+    /var/local/virtuoso/bin/isql 1111 dba dba sql/virtuoso-preparation-before-schema-created.sql
 
-	echo "Deploying production CR to production Tomcat ..."
+    echo "Syncing production CR's Liquibase changelog ..."
+    mvn liquibase:changelogSync
 
-	# Deploy to Tomcat.
-	sudo rm -rf /var/local/tomcat-latest/webapps/data
-	sudo rm -rf /var/local/tomcat-latest/work/Catalina/localhost/data
-	sudo rm -rf /var/local/tomcat-latest/conf/Catalina/localhost/data.xml
-	sudo cp ./target/cr-das.war /var/local/tomcat-latest/webapps/data.war
+    #/var/local/virtuoso/bin/isql 1111 dba dba sql/initial-data-after-schema-created.sql
 
-	# Ensure the correct owner of CR application directory.
-	sudo chown -R $user.$user /var/local/cr
+    echo "Deploying production CR to production Tomcat ..."
 
-	echo "Restarting production Tomcat ..."
-	# Restart Tomcat.
-	sudo systemctl start tomcat-latest
+    # Deploy to Tomcat.
+    sudo rm -rf /var/local/tomcat-latest/webapps/data
+    sudo rm -rf /var/local/tomcat-latest/work/Catalina/localhost/data
+    sudo rm -rf /var/local/tomcat-latest/conf/Catalina/localhost/data.xml
+    sudo cp ./target/cr-das.war /var/local/tomcat-latest/webapps/data.war
 
-	# Pop the current directory.
-	popd
+    # Ensure the correct owner of CR application directory.
+    sudo chown -R $user.$user /var/local/cr
+
+    echo "Restarting production Tomcat ..."
+    # Restart Tomcat.
+    sudo systemctl start tomcat-latest
+
+    # Pop the current directory.
+    popd
 }
 
 ### TEST APPLICATIONS ###
@@ -383,6 +389,8 @@ install_test_plone() {
 }
 
 install_test_sparql_client() {
+    curl https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py | sudo python -
+    sudo yum install -y python-virtualenv
     pushd /var/local
       git clone https://github.com/digital-agenda-data/sparql-browser.git test-sparql-browser
       cd test-sparql-browser
@@ -403,93 +411,97 @@ install_test_sparql_client() {
 #
 install_test_contreg() {
 
-	mkdir -p /var/local/crtest
-	echo "Installing test Tomcat..."
+    mkdir -p /var/local/crtest
+    echo "Installing test Tomcat..."
 
-	# Install Tomcat's test-instance.
-	tar xvf /vagrant/bin/apache-tomcat-8.0.30.tar.gz -C /var/local/crtest
-	sudo chown -R $user.$user /var/local/crtest/apache-tomcat-8.0.30
-	ln -s /var/local/crtest/apache-tomcat-8.0.30 /var/local/tomcat-test
-	sudo chown -R $user.$user /var/local/tomcat-test
+    # Install Tomcat's test-instance.
+    tar xvf /vagrant/bin/apache-tomcat-8.0.30.tar.gz -C /var/local/crtest
+    sudo chown -R $user.$user /var/local/crtest/apache-tomcat-8.0.30
+    ln -s /var/local/crtest/apache-tomcat-8.0.30 /var/local/tomcat-test
+    sudo chown -R $user.$user /var/local/tomcat-test
 
-	echo "Configuring test Tomcat's server.xml ..."
+    echo "Configuring test Tomcat's server.xml ..."
 
-	# Configure test-instance's server.xml
-	sudo sed -i '/^\s*<Server port="8005"/c\<Server port="8006" shutdown="SHUTDOWN">' /var/local/tomcat-test/conf/server.xml
-	sudo sed -i 's|Connector port="8080"|Connector port="8081"|g' /var/local/tomcat-test/conf/server.xml
-	sudo sed -i 's|redirectPort="8443"|redirectPort="8444"|g' /var/local/tomcat-test/conf/server.xml
-	sudo sed -i 's|Connector port="8009"|Connector port="8010"|g' /var/local/tomcat-test/conf/server.xml
+    # Configure test-instance's server.xml
+    sudo sed -i '/^\s*<Server port="8005"/c\<Server port="8006" shutdown="SHUTDOWN">' /var/local/tomcat-test/conf/server.xml
+    sudo sed -i 's|Connector port="8080"|Connector port="8081"|g' /var/local/tomcat-test/conf/server.xml
+    sudo sed -i 's|redirectPort="8443"|redirectPort="8444"|g' /var/local/tomcat-test/conf/server.xml
+    sudo sed -i 's|Connector port="8009"|Connector port="8010"|g' /var/local/tomcat-test/conf/server.xml
 
-	echo "Creating test Tomcat's service ..."
+    echo "Creating test Tomcat's service ..."
 
-	# Create test-tomcat service, start it.
-	sudo cp /vagrant/etc/tomcat-test /etc/init.d/
-	sudo chkconfig --add tomcat-test
-	sudo chkconfig --level 2345 tomcat-test on
+    # Create test-tomcat service, start it.
+    sudo cp /vagrant/etc/tomcat-test /etc/init.d/
+    sudo chkconfig --add tomcat-test
+    sudo chkconfig --level 2345 tomcat-test on
 
-	echo "Preparing test CR's application home and build directories..."
+    echo "Preparing test CR's application home and build directories..."
 
-	# Prepare CR-test application home and build directories.
-	mkdir -p /var/local/crtest/build
-	mkdir -p /var/local/crtest/apphome
-	mkdir -p /var/local/crtest/apphome/acl
-	mkdir -p /var/local/crtest/apphome/filestore
-	mkdir -p /var/local/crtest/apphome/staging
-	mkdir -p /var/local/crtest/apphome/tmp
+    # Prepare CR-test application home and build directories.
+    mkdir -p /var/local/crtest/build
+    mkdir -p /var/local/crtest/apphome
+    mkdir -p /var/local/crtest/apphome/acl
+    mkdir -p /var/local/crtest/apphome/filestore
+    mkdir -p /var/local/crtest/apphome/staging
+    mkdir -p /var/local/crtest/apphome/tmp
 
-	echo "Cloning and building test CR's source code..."
+    echo "Cloning and building test CR's source code..."
 
-	# Go into test-CR build directory and checkout CR source code from GitHub.
-	pushd /var/local/crtest/build
-	git clone https://github.com/digital-agenda-data/scoreboard.contreg.git
-	cd scoreboard.contreg
-	git checkout upgrade-2016-incl-sesame-and-liquibase-v7201
+    # Go into test-CR build directory and checkout CR source code from GitHub.
+    pushd /var/local/crtest/build
+    git clone https://github.com/digital-agenda-data/scoreboard.contreg.git
+    cd scoreboard.contreg
+    git checkout upgrade-2016-incl-sesame-and-liquibase-v7201
 
-	# Prepare local.properties.
-	sudo cp sample.properties local.properties
-	sudo sed -i "/^\s*application.homeDir/c\application.homeDir\=/var\/local\/crtest\/apphome" local.properties
-	sudo sed -i "/^\s*application.homeURL/c\application.homeURL\=http:\/\/test-cr.digital-agenda-data.eu" local.properties
-	sudo sed -i "s/localhost:1111/localhost:1112/g" local.properties
+    # Prepare local.properties.
+    sudo cp sample.properties local.properties
+    sudo sed -i "/^\s*application.homeDir/c\application.homeDir\=/var\/local\/crtest\/apphome" local.properties
+    sudo sed -i "/^\s*application.homeURL/c\application.homeURL\=http:\/\/test-cr.digital-agenda-data.eu" local.properties
+    sudo sed -i "s/localhost:1111/localhost:1112/g" local.properties
 
-	# Build with Maven and ensure Liquibase changelog is synced.
-	mvn -Dmaven.test.skip=true clean install
+    # Build with Maven and ensure Liquibase changelog is synced.
+    mvn -Dmaven.test.skip=true clean install
 
-	echo "Syncing test CR's Liquibase changelog ..."
-	mvn liquibase:changelogSync
+    /var/local/test-virtuoso/bin/isql 1112 dba dba sql/virtuoso-preparation-before-schema-created.sql
 
-	echo "Deploying test CR to test Tomcat ..."
+    echo "Syncing test CR's Liquibase changelog ..."
+    mvn liquibase:changelogSync
 
-	# Backup Tomcat's default ROOT webapp.
-	sudo mv /var/local/tomcat-test/webapps/ROOT /var/local/tomcat-test/webapps/ROOT_ORIG
+    #/var/local/test-virtuoso/bin/isql 1112 dba dba sql/initial-data-after-schema-created.sql
 
-	# Deploy to Tomcat.
-	sudo rm -rf /var/local/tomcat-test/webapps/ROOT
-	sudo rm -rf /var/local/tomcat-test/work/Catalina/localhost/ROOT*
-	sudo rm -rf /var/local/tomcat-test/conf/Catalina/localhost/ROOT.xml
-	sudo cp ./target/cr-das.war /var/local/tomcat-test/webapps/ROOT.war
+    echo "Deploying test CR to test Tomcat ..."
 
-	# Ensure the correct owner of CR application directory.
-	sudo chown -R $user.$user /var/local/crtest
+    # Backup Tomcat's default ROOT webapp.
+    sudo mv /var/local/tomcat-test/webapps/ROOT /var/local/tomcat-test/webapps/ROOT_ORIG
 
-	echo "Restarting test Tomcat ..."
-	# Restart Tomcat.
-	sudo systemctl start tomcat-test
+    # Deploy to Tomcat.
+    sudo rm -rf /var/local/tomcat-test/webapps/ROOT
+    sudo rm -rf /var/local/tomcat-test/work/Catalina/localhost/ROOT*
+    sudo rm -rf /var/local/tomcat-test/conf/Catalina/localhost/ROOT.xml
+    sudo cp ./target/cr-das.war /var/local/tomcat-test/webapps/ROOT.war
 
-	# Pop the current directory.
-	popd
+    # Ensure the correct owner of CR application directory.
+    sudo chown -R $user.$user /var/local/crtest
+
+    echo "Restarting test Tomcat ..."
+    # Restart Tomcat.
+    sudo systemctl start tomcat-test
+
+    # Pop the current directory.
+    popd
 }
 
 #
 # Installation script for piwik analytics.
 #
 install_piwik() {
+  sudo mkdir -p /var/www/test-html/analytics
   pushd /var/www/test-html
     wget -nv -N -P /vagrant/bin/ http://builds.piwik.org/piwik.zip
     sudo yum install -y unzip
-    sudo mkdir analytics
     sudo unzip /vagrant/bin/piwik.zip -d analytics
     #TODO: change salt in config.ini.php
-    cp /vagrant/etc/config.ini.php analytics/piwik/config/
+    sudo cp /vagrant/etc/config.ini.php analytics/piwik/config/
     #mariadb
     sudo yum install -y mariadb-server mariadb
     sudo systemctl enable mariadb
@@ -504,8 +516,9 @@ install_piwik() {
     sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     sudo rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
     sudo yum install -y php55w php55w-cli php55w-common php55w-gd php55w-intl php55w-ldap php55w-mbstring php55w-mcrypt php55w-mysql php55w-opcache php55w-pdo php55w-pear php55w-pecl-imagick php55w-pecl-memcached php55w-xml
+    sudo chown apache.scoreboard /var/www/test-html -R
+    sudo chmod g+w /var/www/test-html -R
     sudo systemctl restart httpd
-    sudo chown -R apache.scoreboard analytics
   popd
 }
 
@@ -534,7 +547,7 @@ fi
 
 # Install Java + Tomcat.
 if [ ! -f "/usr/bin/java" ]; then
-	echo "Installing Java + Maven + Tomcat..."
+    echo "Installing Java + Maven + Tomcat..."
     install_java
 else
     echo "Java already installed"
@@ -542,7 +555,7 @@ fi
 
 # Install Content Registry.
 if [ ! -d "/var/local/cr" ]; then
-	echo "Installing Content Registry (production) ..."
+    echo "Installing Content Registry (production) ..."
     install_contreg
 else
     echo "Content Registry already installed"
@@ -550,7 +563,7 @@ fi
 
 # Install ELDA.
 if [ ! -d "/var/local/elda" ]; then
-	echo "Installing ELDA (production) ..."
+    echo "Installing ELDA (production) ..."
     install_elda
 else
     echo "Elda already installed"
@@ -558,7 +571,7 @@ fi
 
 # Install SPARQL browser.
 if [ ! -d "/var/local/sparql-browser" ]; then
-	echo "Installing SPARQL browser (production) ..."
+    echo "Installing SPARQL browser (production) ..."
     install_sparql_client
 else
     echo "SPARQL browser (production) already installed"
@@ -581,7 +594,7 @@ else
 fi
 
 if [ ! -d "/var/local/test-sparql-browser" ]; then
-	echo "Installing SPARQL browser (test) ..."
+    echo "Installing SPARQL browser (test) ..."
     install_test_sparql_client
 else
     echo "SPARQL browser (test) already installed"
@@ -589,7 +602,7 @@ fi
 
 # Install test-CR.
 if [ ! -d "/var/local/crtest" ]; then
-	echo "Installing Content Registry (test) ..."
+    echo "Installing Content Registry (test) ..."
     install_test_contreg
 else
     echo "Content Registry test instance already installed!"
@@ -597,7 +610,7 @@ fi
 
 # Install piwik
 if [ ! -d "/var/www/test-html/analytics" ]; then
-	echo "Installing Piwik ..."
+    echo "Installing Piwik ..."
     install_piwik
 else
     echo "Piwik already installed!"
