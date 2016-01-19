@@ -44,5 +44,5 @@ Solution => Restart buildout
 
 ## TODO
 
-* Piwik
 * Automatic startup for sparql-client
+* Not disable selinux

@@ -498,6 +498,36 @@ install_test_contreg() {
 	popd
 }
 
+#
+# Installation script for piwik analytics.
+#
+install_piwik() {
+  pushd /var/www/test-html
+    wget -nv -N -P /vagrant/bin/ http://builds.piwik.org/piwik.zip
+    sudo yum install -y unzip
+    sudo mkdir analytics
+    sudo unzip /vagrant/bin/piwik.zip -d analytics
+    #TODO: change salt in config.ini.php
+    cp /vagrant/etc/config.ini.php analytics/piwik/config/
+    #mariadb
+    sudo yum install -y mariadb-server mariadb
+    sudo systemctl enable mariadb
+    sudo systemctl start mariadb
+    sudo mysql -u root -e "CREATE DATABASE piwik"
+    sudo mysql -u root -e "CREATE USER 'piwik'@'localhost' IDENTIFIED BY 'piwik';"
+    sudo mysql -u root -e "GRANT ALL PRIVILEGES ON piwik.* TO 'piwik'@'localhost';"
+    wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/piwik_dump.sql.gz
+    gunzip -c /vagrant/data/piwik_dump.sql.gz > /vagrant/data/piwik_dump.sql
+    sudo mysql -u root piwik < /vagrant/data/piwik_dump.sql
+    # PHP
+    sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    sudo rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+    sudo yum install -y php55w php55w-cli php55w-common php55w-gd php55w-intl php55w-ldap php55w-mbstring php55w-mcrypt php55w-mysql php55w-opcache php55w-pdo php55w-pear php55w-pecl-imagick php55w-pecl-memcached php55w-xml
+    sudo systemctl restart httpd
+    sudo chown -R apache.scoreboard analytics
+  popd
+}
+
 user=scoreboard
 sudo adduser $user
 sudo chmod o+w /var/local
@@ -582,4 +612,12 @@ if [ ! -d "/var/local/crtest" ]; then
     install_test_contreg
 else
     echo "Content Registry test instance already installed!"
+fi
+
+# Install piwik
+if [ ! -d "/var/www/test-html/analytics" ]; then
+	echo "Installing Piwik ..."
+    install_piwik
+else
+    echo "Piwik already installed!"
 fi
