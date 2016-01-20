@@ -247,21 +247,21 @@ install_contreg() {
     sudo sed -i "/^\s*application.homeDir/c\application.homeDir\=/var\/local\/cr\/apphome" local.properties
     sudo sed -i "/^\s*application.homeURL/c\application.homeURL\=http:\/\/digital-agenda-data.eu\/data" local.properties
 
-    # Build with Maven and ensure Liquibase changelog is synced.
+    # Build with Maven
     mvn -Dmaven.test.skip=true clean install
 
-	# Create required CR users in Virtuoso and other CR-specific Virtuoso preparations.
-	echo "Preparing Virtuoso for CR production schema ..."
+    # Create required CR users in Virtuoso and other CR-specific Virtuoso preparations.
+    echo "Preparing Virtuoso for CR production schema ..."
     /var/local/virtuoso/bin/isql 1111 dba dba sql/virtuoso-preparation-before-schema-created.sql
 
     echo "Creating production CR's schema with Liquibase ..."
     mvn liquibase:update
 
-	echo "Creating some initial data in CR production database..."
+    echo "Creating some initial data in CR production database..."
     /var/local/virtuoso/bin/isql 1111 dba dba sql/initial-data-after-schema-created.sql
 
     # Deploy to Tomcat.
-	echo "Deploying production CR to production Tomcat ..."
+    echo "Deploying production CR to production Tomcat ..."
     sudo rm -rf /var/local/tomcat-latest/webapps/data
     sudo rm -rf /var/local/tomcat-latest/work/Catalina/localhost/data
     sudo rm -rf /var/local/tomcat-latest/conf/Catalina/localhost/data.xml
@@ -464,22 +464,22 @@ install_test_contreg() {
     # Build with Maven and ensure Liquibase changelog is synced.
     mvn -Dmaven.test.skip=true clean install
 
-	# Create required CR users in Virtuoso and other CR-specific Virtuoso preparations.
-	echo "Preparing Virtuoso for test-CR schema ..."
+    # Create required CR users in Virtuoso and other CR-specific Virtuoso preparations.
+    echo "Preparing Virtuoso for test-CR schema ..."
     /var/local/test-virtuoso/bin/isql 1112 dba dba sql/virtuoso-preparation-before-schema-created.sql
 
     echo "Creating test-CR schema with Liquibase ..."
     mvn liquibase:update
 
-	echo "Creating some initial data in CR test database..."
+    echo "Creating some initial data in CR test database..."
     /var/local/test-virtuoso/bin/isql 1112 dba dba sql/initial-data-after-schema-created.sql
 
-	echo "Deploying test CR to test Tomcat ..."
+    # Deploy to Tomcat.
+    echo "Deploying test CR to test Tomcat ..."
 
     # Backup Tomcat's default ROOT webapp.
     sudo mv /var/local/tomcat-test/webapps/ROOT /var/local/tomcat-test/webapps/ROOT_ORIG
 
-    # Deploy to Tomcat.
     sudo rm -rf /var/local/tomcat-test/webapps/ROOT
     sudo rm -rf /var/local/tomcat-test/work/Catalina/localhost/ROOT*
     sudo rm -rf /var/local/tomcat-test/conf/Catalina/localhost/ROOT.xml
