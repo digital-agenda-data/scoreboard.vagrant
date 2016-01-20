@@ -7,12 +7,12 @@ After=syslog.target network.target
 Type=forking
 
 Environment=JAVA_HOME=/usr/java/latest
-Environment=CATALINA_HOME=/var/local/tomcat-latest
-Environment=CATALINA_PID=/var/local/tomcat-latest/apache-tomcat.pid
-Environment=CATALINA_BASE=/var/local/tomcat-latest
+Environment=CATALINA_HOME=/var/local/test-cr/tomcat
+Environment=CATALINA_PID=/var/local/test-cr/tomcat/apache-tomcat.pid
+Environment=CATALINA_BASE=/var/local/test-cr/tomcat
 Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
-ExecStart=/var/local/tomcat-latest/bin/startup.sh
-ExecStop=/var/local/tomcat-latest/bin/shutdown.sh
+ExecStart=/var/local/test-cr/tomcat/bin/startup.sh
+ExecStop=/var/local/test-cr/tomcat/bin/shutdown.sh
 TimeoutStopSec=15
 
 User=scoreboard

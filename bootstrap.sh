@@ -89,6 +89,7 @@ install_virtuoso() {
   sudo systemctl start virtuoso7
 
   # download the graph and import it
+  echo "Importing the test graph..."
   rm -rf /tmp/prod_export_graph
   wget -nv -N -P /tmp/ http://85.9.22.69/scoreboard/download/prod_export_graph.tgz
   tar xzf /tmp/prod_export_graph.tgz -C /tmp --no-same-owner
@@ -108,6 +109,7 @@ install_plone() {
   virtualenv-2.7 .
   source bin/activate
   pip install setuptools==7.0 zc.buildout==2.2.5
+  deactivate
   ln -s production.cfg buildout.cfg
   bin/buildout
 
@@ -159,17 +161,6 @@ EOF
   echo "$RCLINES" >> ~/.bashrc
   source ~/.bashrc
   echo "Apache Maven installed in $M2_HOME"
-
-  # install Apache Tomcat 8
-  wget -nv -N -P /vagrant/bin http://archive.apache.org/dist/tomcat/tomcat-8/v8.0.30/bin/apache-tomcat-8.0.30.tar.gz
-  tar xvf /vagrant/bin/apache-tomcat-8.0.30.tar.gz -C /var/local
-  sudo chown -R $user.$user /var/local/apache-tomcat-8.0.30
-  ln -s /var/local/apache-tomcat-8.0.30 /var/local/tomcat-latest
-  sudo chown -R $user.$user /var/local/tomcat-latest
-
-  sudo cp /vagrant/etc/tomcat-latest.service /etc/systemd/system/
-  sudo systemctl enable tomcat-latest
-  sudo systemctl start tomcat-latest
 
   popd
 }
@@ -233,6 +224,16 @@ install_contreg() {
     mkdir -p /var/local/cr/apphome/filestore
     mkdir -p /var/local/cr/apphome/staging
     mkdir -p /var/local/cr/apphome/tmp
+    
+    echo "Installing Tomcat..."
+    # install Apache Tomcat 8
+    CATALINA_HOME=/var/local/cr/tomcat
+    wget -nv -N -P /vagrant/bin http://archive.apache.org/dist/tomcat/tomcat-8/v8.0.30/bin/apache-tomcat-8.0.30.tar.gz
+    tar xvf /vagrant/bin/apache-tomcat-8.0.30.tar.gz -C /var/local
+    sudo mv /var/local/apache-tomcat-8.0.30 $CATALINA_HOME
+
+    sudo cp /vagrant/etc/cr.service /etc/systemd/system/
+    sudo systemctl enable cr
 
     echo "Cloning and building production CR source code..."
 
@@ -248,7 +249,7 @@ install_contreg() {
     sudo sed -i "/^\s*application.homeURL/c\application.homeURL\=http:\/\/digital-agenda-data.eu\/data" local.properties
 
     # Build with Maven
-    mvn -Dmaven.test.skip=true clean install
+    mvn -Dmaven.test.skip=true clean package
 
     # Create required CR users in Virtuoso and other CR-specific Virtuoso preparations.
     echo "Preparing Virtuoso for CR production schema ..."
@@ -262,17 +263,17 @@ install_contreg() {
 
     # Deploy to Tomcat.
     echo "Deploying production CR to production Tomcat ..."
-    sudo rm -rf /var/local/tomcat-latest/webapps/data
-    sudo rm -rf /var/local/tomcat-latest/work/Catalina/localhost/data
-    sudo rm -rf /var/local/tomcat-latest/conf/Catalina/localhost/data.xml
-    sudo cp ./target/cr-das.war /var/local/tomcat-latest/webapps/data.war
+    sudo rm -rf $CATALINA_HOME/webapps/data
+    sudo rm -rf $CATALINA_HOME/work/Catalina/localhost/data
+    sudo rm -rf $CATALINA_HOME/conf/Catalina/localhost/data.xml
+    sudo cp ./target/cr-das.war $CATALINA_HOME/webapps/data.war
 
     # Ensure the correct owner of CR application directory.
     sudo chown -R $user.$user /var/local/cr
 
-    echo "Restarting production Tomcat ..."
-    # Restart Tomcat.
-    sudo systemctl start tomcat-latest
+    echo "Starting production Tomcat ..."
+    # Start Tomcat.
+    sudo systemctl start cr
 
     # Pop the current directory.
     popd
@@ -311,7 +312,7 @@ install_test_virtuoso() {
   sudo sed -i "/^NumberOfBuffers/c\NumberOfBuffers=170000" $VIRTUOSO_INI
   sudo sed -i "/^MaxDirtyBuffers/c\MaxDirtyBuffers=130000" $VIRTUOSO_INI
 
-  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/test-html\/download\/, \/var\/local\/crtest\/apphome\/tmp, \/var\/local\/crtest\/apphome\/staging/' $VIRTUOSO_INI
+  sudo sed -i '/^DirsAllowed/ s/$/, \/tmp, \/var\/www\/test-html\/download\/, \/var\/local\/test-cr\/apphome\/tmp, \/var\/local\/test-cr\/apphome\/staging/' $VIRTUOSO_INI
 
   sudo sed -i "/^ResultSetMaxRows/c\ResultSetMaxRows=1000000" $VIRTUOSO_INI
   sudo sed -i "/^MaxQueryCostEstimationTime/c\MaxQueryCostEstimationTime=5000; in seconds" $VIRTUOSO_INI
@@ -335,6 +336,7 @@ install_test_virtuoso() {
   #sudo systemctl enable virtuoso7-test
   sudo systemctl start virtuoso7-test
 
+  echo "Importing the test graph..."
   rm -rf /tmp/test_export_graph
   wget -nv -N -P /tmp/ http://85.9.22.69/scoreboard/download/test_export_graph.tgz
   tar xzf /tmp/test_export_graph.tgz -C /tmp --no-same-owner
@@ -355,6 +357,7 @@ install_test_plone() {
   virtualenv-2.7 .
   source bin/activate
   pip install setuptools==7.0 zc.buildout==2.2.5
+  deactivate
   ln -s test.cfg buildout.cfg
 
   # copy eggs from production when found
@@ -378,10 +381,6 @@ install_test_plone() {
   sudo chmod g+w /var/www/test-html -R
   sudo systemctl reload httpd
 
-  #sudo cp /vagrant/etc/plone-test /etc/init.d
-  #sudo chkconfig --add plone-test
-  #sudo chkconfig --level 2345 plone-test on
-  #sudo systemctl start plone-test
 
   sudo cp /vagrant/etc/supervisord-test.service /etc/systemd/system/
   sudo systemctl enable supervisord-test
@@ -413,56 +412,54 @@ install_test_sparql_client() {
 #
 install_test_contreg() {
 
-    mkdir -p /var/local/crtest
+    mkdir -p /var/local/test-cr
     echo "Installing test Tomcat..."
+    CATALINA_HOME=/var/local/test-cr/tomcat
 
     # Install Tomcat's test-instance.
-    tar xvf /vagrant/bin/apache-tomcat-8.0.30.tar.gz -C /var/local/crtest
-    sudo chown -R $user.$user /var/local/crtest/apache-tomcat-8.0.30
-    ln -s /var/local/crtest/apache-tomcat-8.0.30 /var/local/tomcat-test
-    sudo chown -R $user.$user /var/local/tomcat-test
+    tar xvf /vagrant/bin/apache-tomcat-8.0.30.tar.gz -C /var/local/test-cr
+    mv /var/local/test-cr/apache-tomcat-8.0.30 $CATALINA_HOME
 
     echo "Configuring test Tomcat's server.xml ..."
 
     # Configure test-instance's server.xml
-    sudo sed -i '/^\s*<Server port="8005"/c\<Server port="8006" shutdown="SHUTDOWN">' /var/local/tomcat-test/conf/server.xml
-    sudo sed -i 's|Connector port="8080"|Connector port="8081"|g' /var/local/tomcat-test/conf/server.xml
-    sudo sed -i 's|redirectPort="8443"|redirectPort="8444"|g' /var/local/tomcat-test/conf/server.xml
-    sudo sed -i 's|Connector port="8009"|Connector port="8010"|g' /var/local/tomcat-test/conf/server.xml
+    sudo sed -i '/^\s*<Server port="8005"/c\<Server port="8006" shutdown="SHUTDOWN">' $CATALINA_HOME/conf/server.xml
+    sudo sed -i 's|Connector port="8080"|Connector port="8081"|g' $CATALINA_HOME/conf/server.xml
+    sudo sed -i 's|redirectPort="8443"|redirectPort="8444"|g' $CATALINA_HOME/conf/server.xml
+    sudo sed -i 's|Connector port="8009"|Connector port="8010"|g' $CATALINA_HOME/conf/server.xml
 
     echo "Creating test Tomcat's service ..."
 
     # Create test-tomcat service, start it.
-    sudo cp /vagrant/etc/tomcat-test /etc/init.d/
-    sudo chkconfig --add tomcat-test
-    sudo chkconfig --level 2345 tomcat-test on
+    sudo cp /vagrant/etc/cr-test.service /etc/systemd/system/
+    sudo systemctl enable cr-test
 
     echo "Preparing test CR's application home and build directories..."
 
     # Prepare CR-test application home and build directories.
-    mkdir -p /var/local/crtest/build
-    mkdir -p /var/local/crtest/apphome
-    mkdir -p /var/local/crtest/apphome/acl
-    mkdir -p /var/local/crtest/apphome/filestore
-    mkdir -p /var/local/crtest/apphome/staging
-    mkdir -p /var/local/crtest/apphome/tmp
+    mkdir -p /var/local/test-cr/build
+    mkdir -p /var/local/test-cr/apphome
+    mkdir -p /var/local/test-cr/apphome/acl
+    mkdir -p /var/local/test-cr/apphome/filestore
+    mkdir -p /var/local/test-cr/apphome/staging
+    mkdir -p /var/local/test-cr/apphome/tmp
 
     echo "Cloning and building test CR's source code..."
 
     # Go into test-CR build directory and checkout CR source code from GitHub.
-    pushd /var/local/crtest/build
+    pushd /var/local/test-cr/build
     git clone https://github.com/digital-agenda-data/scoreboard.contreg.git
     cd scoreboard.contreg
     git checkout upgrade-2016-incl-sesame-and-liquibase-v7201
 
     # Prepare local.properties.
     sudo cp sample.properties local.properties
-    sudo sed -i "/^\s*application.homeDir/c\application.homeDir\=/var\/local\/crtest\/apphome" local.properties
+    sudo sed -i "/^\s*application.homeDir/c\application.homeDir\=/var\/local\/test-cr\/apphome" local.properties
     sudo sed -i "/^\s*application.homeURL/c\application.homeURL\=http:\/\/test-cr.digital-agenda-data.eu" local.properties
     sudo sed -i "s/localhost:1111/localhost:1112/g" local.properties
 
     # Build with Maven and ensure Liquibase changelog is synced.
-    mvn -Dmaven.test.skip=true clean install
+    mvn -Dmaven.test.skip=true clean package
 
     # Create required CR users in Virtuoso and other CR-specific Virtuoso preparations.
     echo "Preparing Virtuoso for test-CR schema ..."
@@ -478,19 +475,21 @@ install_test_contreg() {
     echo "Deploying test CR to test Tomcat ..."
 
     # Backup Tomcat's default ROOT webapp.
-    sudo mv /var/local/tomcat-test/webapps/ROOT /var/local/tomcat-test/webapps/ROOT_ORIG
+    sudo mv $CATALINA_HOME/webapps/ROOT $CATALINA_HOME/webapps/ROOT_ORIG
 
-    sudo rm -rf /var/local/tomcat-test/webapps/ROOT
-    sudo rm -rf /var/local/tomcat-test/work/Catalina/localhost/ROOT*
-    sudo rm -rf /var/local/tomcat-test/conf/Catalina/localhost/ROOT.xml
-    sudo cp ./target/cr-das.war /var/local/tomcat-test/webapps/ROOT.war
+    # Deploy to Tomcat.
+    sudo rm -rf $CATALINA_HOME/webapps/ROOT
+    sudo rm -rf $CATALINA_HOME/work/Catalina/localhost/ROOT*
+    sudo rm -rf $CATALINA_HOME/conf/Catalina/localhost/ROOT.xml
+    sudo cp ./target/cr-das.war $CATALINA_HOME/webapps/ROOT.war
 
     # Ensure the correct owner of CR application directory.
-    sudo chown -R $user.$user /var/local/crtest
+    sudo chown -R $user.$user /var/local/test-cr
 
-    echo "Restarting test Tomcat ..."
-    # Restart Tomcat.
-    sudo systemctl start tomcat-test
+    echo "Starting test Tomcat ..."
+
+    # Start test tomcat
+    sudo systemctl start cr-test
 
     # Pop the current directory.
     popd
@@ -606,7 +605,7 @@ else
 fi
 
 # Install test-CR.
-if [ ! -d "/var/local/crtest" ]; then
+if [ ! -d "/var/local/test-cr" ]; then
     echo "Installing Content Registry (test) ..."
     install_test_contreg
 else
@@ -615,7 +614,7 @@ fi
 
 # Install piwik
 if [ ! -d "/var/www/test-html/analytics" ]; then
-    echo "Installing Piwik ..."
+    echo "Installing Piwik ..."	
     install_piwik
 else
     echo "Piwik already installed!"
