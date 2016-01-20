@@ -85,7 +85,7 @@ install_virtuoso() {
   sudo echo 'export PATH=$PATH:/var/local/virtuoso/bin' | sudo tee --append /home/vagrant/.bashrc > /dev/null
 
   sudo cp /vagrant/etc/virtuoso7.service /etc/systemd/system/
-  #sudo systemctl enable virtuoso7
+  sudo systemctl enable virtuoso7
   sudo systemctl start virtuoso7
 
   # download the graph and import it
@@ -333,7 +333,7 @@ install_test_virtuoso() {
   sudo echo 'export PATH=$PATH:/var/local/test-virtuoso/bin' | sudo tee --append /home/vagrant/.bashrc > /dev/null
 
   sudo cp /vagrant/etc/virtuoso7-test.service /etc/systemd/system/
-  #sudo systemctl enable virtuoso7-test
+  sudo systemctl enable virtuoso7-test
   sudo systemctl start virtuoso7-test
 
   echo "Importing the test graph..."

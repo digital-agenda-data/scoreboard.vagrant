@@ -55,5 +55,5 @@ Vagrant.configure(2) do |config|
   config.ssh.password = "vagrant"
 
   config.vm.provision :shell, path: "bootstrap.sh"
-  config.vm.provision :shell, path: "post-mount.sh", run: "always", privileged: false
+  #config.vm.provision :shell, path: "post-mount.sh", run: "always", privileged: false
 end
