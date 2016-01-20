@@ -87,7 +87,7 @@ install_virtuoso() {
   sudo cp /vagrant/etc/virtuoso7.service /etc/systemd/system/
   #sudo systemctl enable virtuoso7
   sudo systemctl start virtuoso7
-  
+
   # download the graph and import it
   rm -rf /tmp/prod_export_graph
   wget -nv -N -P /tmp/ http://85.9.22.69/scoreboard/download/prod_export_graph.tgz
@@ -250,16 +250,18 @@ install_contreg() {
     # Build with Maven and ensure Liquibase changelog is synced.
     mvn -Dmaven.test.skip=true clean install
 
+	# Create required CR users in Virtuoso and other CR-specific Virtuoso preparations.
+	echo "Preparing Virtuoso for CR production schema ..."
     /var/local/virtuoso/bin/isql 1111 dba dba sql/virtuoso-preparation-before-schema-created.sql
 
-    echo "Syncing production CR's Liquibase changelog ..."
-    mvn liquibase:changelogSync
+    echo "Creating production CR's schema with Liquibase ..."
+    mvn liquibase:update
 
-    #/var/local/virtuoso/bin/isql 1111 dba dba sql/initial-data-after-schema-created.sql
-
-    echo "Deploying production CR to production Tomcat ..."
+	echo "Creating some initial data in CR production database..."
+    /var/local/virtuoso/bin/isql 1111 dba dba sql/initial-data-after-schema-created.sql
 
     # Deploy to Tomcat.
+	echo "Deploying production CR to production Tomcat ..."
     sudo rm -rf /var/local/tomcat-latest/webapps/data
     sudo rm -rf /var/local/tomcat-latest/work/Catalina/localhost/data
     sudo rm -rf /var/local/tomcat-latest/conf/Catalina/localhost/data.xml
@@ -336,7 +338,7 @@ install_test_virtuoso() {
   rm -rf /tmp/test_export_graph
   wget -nv -N -P /tmp/ http://85.9.22.69/scoreboard/download/test_export_graph.tgz
   tar xzf /tmp/test_export_graph.tgz -C /tmp --no-same-owner
-  $VIRTUOSO_HOME/bin/isql 1112 dba dba /vagrant/misc/import_test.sql 
+  $VIRTUOSO_HOME/bin/isql 1112 dba dba /vagrant/misc/import_test.sql
   popd
 }
 
@@ -462,14 +464,17 @@ install_test_contreg() {
     # Build with Maven and ensure Liquibase changelog is synced.
     mvn -Dmaven.test.skip=true clean install
 
+	# Create required CR users in Virtuoso and other CR-specific Virtuoso preparations.
+	echo "Preparing Virtuoso for test-CR schema ..."
     /var/local/test-virtuoso/bin/isql 1112 dba dba sql/virtuoso-preparation-before-schema-created.sql
 
-    echo "Syncing test CR's Liquibase changelog ..."
-    mvn liquibase:changelogSync
+    echo "Creating test-CR schema with Liquibase ..."
+    mvn liquibase:update
 
-    #/var/local/test-virtuoso/bin/isql 1112 dba dba sql/initial-data-after-schema-created.sql
+	echo "Creating some initial data in CR test database..."
+    /var/local/test-virtuoso/bin/isql 1112 dba dba sql/initial-data-after-schema-created.sql
 
-    echo "Deploying test CR to test Tomcat ..."
+	echo "Deploying test CR to test Tomcat ..."
 
     # Backup Tomcat's default ROOT webapp.
     sudo mv /var/local/tomcat-test/webapps/ROOT /var/local/tomcat-test/webapps/ROOT_ORIG
