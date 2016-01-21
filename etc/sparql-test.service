@@ -1,0 +1,12 @@
+[Unit]
+Description=SPARQL Browser test server
+
+[Service]
+User=scoreboard
+Group=scoreboard
+Type=simple
+WorkingDirectory=/var/local/test-sparql-browser
+ExecStart=/var/local/test-sparql-browser/run_sparql_browser.sh
+
+[Install]
+WantedBy=multi-user.target

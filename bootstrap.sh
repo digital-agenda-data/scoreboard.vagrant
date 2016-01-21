@@ -206,6 +206,9 @@ install_sparql_client() {
       pip install -r requirements-dev.txt
       deactivate
       sudo chown -R $user.$user /var/local/sparql-browser
+      cp /vagrant/etc/sparql.service /etc/systemd/system/
+      systemctl enable sparql
+      systemctl start sparql
     popd
 }
 
@@ -404,6 +407,9 @@ install_test_sparql_client() {
       sed -i "s/55000/45300/g" run_sparql_browser.sh
 
       sudo chown -R $user.$user /var/local/test-sparql-browser
+      cp /vagrant/etc/sparql-test.service /etc/systemd/system/
+      systemctl enable sparql-test
+      systemctl start sparql-test
     popd
 }
 
