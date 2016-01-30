@@ -43,8 +43,5 @@ Solution => Restart buildout
 * yum update takes a _very_ long time. Sometimes this can be caused by unavailable local mirrors. Eventually it works (after 20-30 minutes), or you can kill the process and retry.
 
 ## TODO
-
-* Automatic startup for sparql-client
-* Not disable selinux
-* Refactor locations of crtest and apache tomcat
-* tomcat-test.service
+* Don't disable selinux
+* Get rid of all the sudo's from bootstrap.sh

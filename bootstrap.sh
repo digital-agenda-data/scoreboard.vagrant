@@ -44,7 +44,7 @@ install_virtuoso() {
   # download and compile virtuoso
   VIRTUOSO_HOME=/var/local/virtuoso
   if [ -f "/vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz" ]
-  # pre-compiled binary files available at http://85.9.22.69/scoreboard/download/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz
+  # pre-compiled binary files available at http://85.9.22.69/download/vagrant/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz
   then
     tar xzf /vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz -C /var/local --no-same-owner
   else
@@ -91,7 +91,7 @@ install_virtuoso() {
   # download the graph and import it
   echo "Importing the test graph..."
   rm -rf /tmp/prod_export_graph
-  wget -nv -N -P /tmp/ http://85.9.22.69/scoreboard/download/prod_export_graph.tgz
+  wget -nv -N -P /tmp/ http://85.9.22.69/download/vagrant/prod_export_graph.tgz
   tar xzf /tmp/prod_export_graph.tgz -C /tmp --no-same-owner
   $VIRTUOSO_HOME/bin/isql 1111 dba dba /vagrant/misc/import_prod.sql
 
@@ -101,8 +101,8 @@ install_virtuoso() {
 install_plone() {
   pushd /var/local
 
-  curl https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py | python -
-  sudo yum install -y python-virtualenv libffi-devel cairo libxslt-devel mod_ssl
+  curl https://bootstrap.pypa.io/get-pip.py | python -
+  sudo yum install -y python-virtualenv libffi-devel cairo libxslt-devel mod_ssl git
   mkdir -p plone
   git clone https://github.com/digital-agenda-data/scoreboard.buildout.git plone
   cd plone
@@ -114,7 +114,7 @@ install_plone() {
   bin/buildout
 
   #get data fs
-  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/plone-storage.tar.gz
+  wget -nv -N -P /vagrant/data http://85.9.22.69/download/vagrant/plone-storage.tar.gz
   sudo tar -xzvf /vagrant/data/plone-storage.tar.gz --directory=/var/local/plone/var
 
   sudo chown -R $user.$user /var/local/plone
@@ -195,7 +195,7 @@ install_elda() {
 }
 
 install_sparql_client() {
-    curl https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py | sudo python -
+    curl https://bootstrap.pypa.io/get-pip.py | sudo python -
     sudo yum install -y python-virtualenv
     pushd /var/local
       git clone https://github.com/digital-agenda-data/sparql-browser.git
@@ -291,7 +291,7 @@ install_test_virtuoso() {
   # download and compile virtuoso
   VIRTUOSO_HOME=/var/local/test-virtuoso
   if [ -f "/vagrant/bin/virtuoso-test-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz" ]
-  # pre-compiled binary files available at http://85.9.22.69/scoreboard/download/virtuoso-test-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz
+  # pre-compiled binary files available at http://85.9.22.69/download/vagrant/virtuoso-test-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz
   then
     tar xzf /vagrant/bin/virtuoso-test-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz -C /var/local --no-same-owner
   else
@@ -341,7 +341,7 @@ install_test_virtuoso() {
 
   echo "Importing the test graph..."
   rm -rf /tmp/test_export_graph
-  wget -nv -N -P /tmp/ http://85.9.22.69/scoreboard/download/test_export_graph.tgz
+  wget -nv -N -P /tmp/ http://85.9.22.69/download/vagrant/test_export_graph.tgz
   tar xzf /tmp/test_export_graph.tgz -C /tmp --no-same-owner
   $VIRTUOSO_HOME/bin/isql 1112 dba dba /vagrant/misc/import_test.sql
   popd
@@ -352,8 +352,8 @@ install_test_plone() {
 
   HOME_DIR=test-plone
 
-  curl https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py | python -
-  sudo yum install -y python-virtualenv libffi-devel cairo libxslt-devel mod_ssl
+  curl https://bootstrap.pypa.io/get-pip.py | python -
+  sudo yum install -y python-virtualenv libffi-devel cairo libxslt-devel mod_ssl git
   mkdir -p $HOME_DIR
   git clone https://github.com/digital-agenda-data/scoreboard.buildout.git $HOME_DIR
   cd $HOME_DIR
@@ -368,7 +368,7 @@ install_test_plone() {
   bin/buildout
 
   #get data fs
-  wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/plone-storage-test.tar.gz
+  wget -nv -N -P /vagrant/data http://85.9.22.69/download/vagrant/plone-storage-test.tar.gz
   tar -xzvf /vagrant/data/plone-storage-test.tar.gz --directory=/var/local/$HOME_DIR/var
 
   sudo chown -R $user.$user /var/local/$HOME_DIR
@@ -393,7 +393,7 @@ install_test_plone() {
 }
 
 install_test_sparql_client() {
-    curl https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py | sudo python -
+    curl https://bootstrap.pypa.io/get-pip.py | sudo python -
     sudo yum install -y python-virtualenv
     pushd /var/local
       git clone https://github.com/digital-agenda-data/sparql-browser.git test-sparql-browser
@@ -519,7 +519,7 @@ install_piwik() {
     sudo mysql -u root -e "CREATE DATABASE piwik"
     sudo mysql -u root -e "CREATE USER 'piwik'@'localhost' IDENTIFIED BY 'piwik';"
     sudo mysql -u root -e "GRANT ALL PRIVILEGES ON piwik.* TO 'piwik'@'localhost';"
-    wget -nv -N -P /vagrant/data http://85.9.22.69/scoreboard/download/piwik_dump.sql.gz
+    wget -nv -N -P /vagrant/data http://85.9.22.69/download/vagrant/piwik_dump.sql.gz
     gunzip -c /vagrant/data/piwik_dump.sql.gz > /vagrant/data/piwik_dump.sql
     sudo mysql -u root piwik < /vagrant/data/piwik_dump.sql
     # PHP
