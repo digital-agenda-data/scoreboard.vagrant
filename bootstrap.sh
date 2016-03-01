@@ -86,6 +86,7 @@ install_virtuoso() {
 
   cp /vagrant/etc/virtuoso7.service /etc/systemd/system/
   cp /vagrant/etc/virtuoso.env /root/virtuoso.env
+  cp /vagrant/misc/shutdown.sql $VIRTUOSO_HOME/var/lib/virtuoso/db/
   systemctl enable virtuoso7
   systemctl start virtuoso7
 
@@ -338,6 +339,7 @@ install_test_virtuoso() {
 
   cp /vagrant/etc/virtuoso7-test.service /etc/systemd/system/
   cp /vagrant/etc/virtuoso.env /root/virtuoso7-test.env
+  cp /vagrant/misc/shutdown.sql $VIRTUOSO_HOME/var/lib/virtuoso/db/
   systemctl enable virtuoso7-test
   systemctl start virtuoso7-test
 
