@@ -85,6 +85,7 @@ install_virtuoso() {
   echo 'export PATH=$PATH:/var/local/virtuoso/bin' | tee --append /home/vagrant/.bashrc > /dev/null
 
   cp /vagrant/etc/virtuoso7.service /etc/systemd/system/
+  cp /vagrant/etc/virtuoso.env /root/virtuoso.env
   systemctl enable virtuoso7
   systemctl start virtuoso7
 
@@ -336,6 +337,7 @@ install_test_virtuoso() {
   echo 'export PATH=$PATH:/var/local/test-virtuoso/bin' | tee --append /home/vagrant/.bashrc > /dev/null
 
   cp /vagrant/etc/virtuoso7-test.service /etc/systemd/system/
+  cp /vagrant/etc/virtuoso.env /root/virtuoso7-test.env
   systemctl enable virtuoso7-test
   systemctl start virtuoso7-test
 

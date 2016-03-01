@@ -1,0 +1,3 @@
+checkpoint;
+shutdown;
+exit;

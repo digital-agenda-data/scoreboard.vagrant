@@ -5,7 +5,9 @@ Description=Virutoso 7 test server
 User=scoreboard
 Group=scoreboard
 Type=forking
+EnvironmentFile=/root/virtuoso7-test.env
 ExecStart=/var/local/test-virtuoso/bin/virtuoso-t +configfile /var/local/test-virtuoso/var/lib/virtuoso/db/virtuoso.ini
+ExecStop=/var/local/test-virtuoso/bin/isql localhost:1112 dba $DBA /var/local/test-virtuoso/var/lib/virtuoso/db/shutdown.sql
 
 [Install]
 WantedBy=multi-user.target
