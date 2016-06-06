@@ -104,7 +104,7 @@ install_plone() {
   pushd /var/local
 
   curl https://bootstrap.pypa.io/get-pip.py | python -
-  yum install -y python-virtualenv libffi-devel cairo libxslt-devel mod_ssl git
+  yum install -y python-virtualenv libffi-devel cairo libxslt-devel mod_ssl git libjpeg-devel freetype-devel
   mkdir -p plone
   git clone https://github.com/digital-agenda-data/scoreboard.buildout.git plone
   cd plone
@@ -357,7 +357,7 @@ install_test_plone() {
   HOME_DIR=test-plone
 
   curl https://bootstrap.pypa.io/get-pip.py | python -
-  yum install -y python-virtualenv libffi-devel cairo libxslt-devel mod_ssl git
+  yum install -y python-virtualenv libffi-devel cairo libxslt-devel mod_ssl git libjpeg-devel freetype-devel
   mkdir -p $HOME_DIR
   git clone https://github.com/digital-agenda-data/scoreboard.buildout.git $HOME_DIR
   cd $HOME_DIR
