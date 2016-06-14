@@ -29,6 +29,12 @@ The CentOS 7.2 box is created using packer: https://github.com/cristiroma/centos
 (where 172.28.128.3 is the IP of the virtual machine)
 
 
+## Data files
+
+Some binary content is downloaded from the main DAD server (85.9.22.69):
+* [plone-storage.tar.gz](http://85.9.22.69/download/vagrant/plone-storage.tar.gz) contains the default Plone settings and content (datasets, documentation, files etc.). The default login is admin/password.
+* [plone-storage-test.tar.gz](http://85.9.22.69/download/vagrant/plone-storage-test.tar.gz) same as above, but for test environment (test.digital-agenda-data.eu)
+
 ## Troubleshooting
 * Plone does not start. Can be caused by pypy errors during buildout, e.g.
 ```Can't download https://pypi.python.org/packages/source/P/Products.SimpleAttachment/Products.SimpleAttachment-4.4.tar.gz#md5=b067144b5a526b8314e8b5a52e27483e: 500 Internal Server Error```
