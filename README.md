@@ -50,9 +50,7 @@ Solution => Restart buildout
 
 ## TODO
 * Don't disable selinux
-* Get rid of all the sudo's from bootstrap.sh
 * Install fonts
-* virtuoso.make requires a server on port 1111 (port should be free when running make)
 
 ## Various useful things
 
@@ -66,5 +64,5 @@ Solution => Restart buildout
 # Enable core dump
     ulimit -c unlimited
 
-# Run in foreground with debug
+# Run Virtuoso in foreground with debug
     virtuoso-t +debug -f

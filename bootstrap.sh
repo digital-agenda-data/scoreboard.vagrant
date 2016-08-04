@@ -53,7 +53,7 @@ install_virtuoso() {
     tar xzf /vagrant/bin/virtuoso-opensource-7.2.0_p1.tar.gz --no-same-owner
     cd virtuoso-opensource-7.2.0_p1
     ./autogen.sh
-    ./configure --prefix=$VIRTUOSO_HOME --with-readline
+    ./configure --prefix=$VIRTUOSO_HOME --with-readline --enable-fct-vad --enable-conductor-vad --with-port=1111
     make
     mkdir $VIRTUOSO_HOME
     make install
@@ -302,7 +302,7 @@ install_test_virtuoso() {
     tar xzf /vagrant/bin/virtuoso-opensource-7.2.0_p1.tar.gz --no-same-owner
     cd virtuoso-opensource-7.2.0_p1
     ./autogen.sh
-    ./configure --prefix=$VIRTUOSO_HOME --with-readline
+    ./configure --prefix=$VIRTUOSO_HOME --with-readline --enable-fct-vad --enable-conductor-vad --with-port=1112
     make
     mkdir $VIRTUOSO_HOME
     make install
