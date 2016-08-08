@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #################################################################
 # Digital Agenda Data (build system requirements)
-
+export DAD_HOME=/vagrant
 
 # Disable SELinux permanently after reboot
 sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
@@ -29,11 +29,18 @@ firewall-cmd --zone=public --add-port=1111-1112/tcp --permanent
 firewall-cmd --reload
 #systemctl disable firewalld
 
-#restorecon -R /var/www/html/docroot/
+#restorecon -R /var/www/
 
 # systemctl restart httpd
 
+yum install -y telnet git
+
 yum clean all
+
+user=scoreboard
+adduser $user
+chmod o+w /var/local
+
 
 echo "WARNING! All passwords are set to 'vagrant'. The vagrant account is insecure (password/key)!"
 
@@ -43,15 +50,15 @@ install_virtuoso() {
   # git clone -b stable/7 git://github.com/openlink/virtuoso-opensource.git virtuoso-src
   # download and compile virtuoso
   VIRTUOSO_HOME=/var/local/virtuoso
-  if [ -f "/vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz" ]
-  # pre-compiled binary files available at http://85.9.22.69/download/vagrant/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz
+  if [ -f "$DAD_HOME/bin/virtuoso-bin-7.2.4.2.CentOS7_2.x86_64.tar.gz" ]
+  # pre-compiled binary files available at http://85.9.22.69/download/vagrant/virtuoso-bin-7.2.4.2.CentOS7_2.x86_64.tar.gz
   then
-    tar xzf /vagrant/bin/virtuoso-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz -C /var/local --no-same-owner
+    tar xzf $DAD_HOME/bin/virtuoso-bin-7.2.4.2.CentOS7_2.x86_64.tar.gz -C /var/local --no-same-owner
   else
-    # download 7.2.0.1
-    wget -nv -N -P /vagrant/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.0.1/virtuoso-opensource-7.2.0_p1.tar.gz
-    tar xzf /vagrant/bin/virtuoso-opensource-7.2.0_p1.tar.gz --no-same-owner
-    cd virtuoso-opensource-7.2.0_p1
+    # download 7.2.4.2
+    wget -nv -N -P $DAD_HOME/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.4.2/virtuoso-opensource-7.2.4.2.tar.gz
+    tar xzf $DAD_HOME/bin/virtuoso-opensource-7.2.4.2.tar.gz --no-same-owner
+    cd virtuoso-opensource-7.2.4.2
     ./autogen.sh
     ./configure --prefix=$VIRTUOSO_HOME --with-readline --enable-fct-vad --enable-conductor-vad --with-port=1111
     make
@@ -84,9 +91,9 @@ install_virtuoso() {
   echo 'export PATH=$PATH:/var/local/virtuoso/bin' | tee --append /home/$user/.bashrc > /dev/null
   echo 'export PATH=$PATH:/var/local/virtuoso/bin' | tee --append /home/vagrant/.bashrc > /dev/null
 
-  cp /vagrant/etc/virtuoso7.service /etc/systemd/system/
-  cp /vagrant/etc/virtuoso.env /root/virtuoso.env
-  cp /vagrant/misc/shutdown.sql $VIRTUOSO_HOME/var/lib/virtuoso/db/
+  cp $DAD_HOME/etc/virtuoso7.service /etc/systemd/system/
+  cp $DAD_HOME/etc/virtuoso.env /root/virtuoso.env
+  cp $DAD_HOME/misc/shutdown.sql $VIRTUOSO_HOME/var/lib/virtuoso/db/
   systemctl enable virtuoso7
   systemctl start virtuoso7
 
@@ -95,7 +102,7 @@ install_virtuoso() {
   rm -rf /tmp/prod_export_graph
   wget -nv -N -P /tmp/ http://85.9.22.69/download/vagrant/prod_export_graph.tgz
   tar xzf /tmp/prod_export_graph.tgz -C /tmp --no-same-owner
-  $VIRTUOSO_HOME/bin/isql 1111 dba dba /vagrant/misc/import_prod.sql
+  $VIRTUOSO_HOME/bin/isql 1111 dba dba $DAD_HOME/misc/import_prod.sql
 
   popd
 }
@@ -116,23 +123,24 @@ install_plone() {
   bin/buildout
 
   #get data fs
-  wget -nv -N -P /vagrant/data http://85.9.22.69/download/vagrant/plone-storage.tar.gz
-  tar -xzvf /vagrant/data/plone-storage.tar.gz --directory=/var/local/plone/var
+  wget -nv -N -P $DAD_HOME/data http://85.9.22.69/download/vagrant/plone-storage.tar.gz
+  tar -xzvf $DAD_HOME/data/plone-storage.tar.gz --directory=/var/local/plone/var
 
   chown -R $user.$user /var/local/plone
 
   #create cron for data export
-  chmod +x /var/local/plone/export/export_datasets_prod.sh
-  line="30 23 * * * /var/local/plone/export/export_datasets_prod.sh"
-  (crontab -u scoreboard -l; echo "$line" ) | crontab -u scoreboard -
+  chmod +x /var/local/plone/export/export_datasets_prod.sh /var/local/plone/export/export_datasets.py
 
-  cp /vagrant/etc/scoreboard-prod.conf /etc/httpd/conf.d
+  line="30 23 * * * /var/local/plone/export/export_datasets_prod.sh"
+  (crontab -u $user -l; echo "$line" ) | crontab -u $user -
+
+  cp $DAD_HOME/etc/scoreboard-prod.conf /etc/httpd/conf.d
   mkdir -p /var/www/html/download
   chown apache.scoreboard /var/www/html -R
   chmod g+w /var/www/html -R
   systemctl reload httpd
 
-  cp /vagrant/etc/supervisord.service /etc/systemd/system/
+  cp $DAD_HOME/etc/supervisord.service /etc/systemd/system/
   systemctl enable supervisord
   systemctl start supervisord
 
@@ -142,18 +150,18 @@ install_plone() {
 install_java() {
   pushd /var/local
   # Install Oracle Java 8
-  wget -nv -N -P /vagrant/bin --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u60-b27/jdk-8u60-linux-x64.rpm"
-  yum localinstall -y /vagrant/bin/jdk-8u60-linux-x64.rpm
+  wget -nv -N -P $DAD_HOME/bin --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u60-b27/jdk-8u60-linux-x64.rpm"
+  yum localinstall -y $DAD_HOME/bin/jdk-8u60-linux-x64.rpm
 
   # Fix this issue: https://wiki.apache.org/tomcat/HowTo/FasterStartUp#Entropy_Source
   sed -i 's|securerandom.source=file:/dev/random|securerandom.source=file:/dev/./urandom|g' /usr/java/jdk1.8.0_60/jre/lib/security/java.security
 
   echo "Java 8 installed in /usr/java/jdk1.8.0_60"
   # Install Apache Maven
-  wget -nv -N -P /vagrant/bin http://apache.javapipe.com/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz
-  tar xvf /vagrant/bin/apache-maven-3.3.3-bin.tar.gz -C /var/local
+  wget -nv -N -P $DAD_HOME/bin http://apache.javapipe.com/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+  tar xvf $DAD_HOME/bin/apache-maven-3.3.9-bin.tar.gz -C /var/local
   read -r -d '' RCLINES <<- 'EOF'
-    export M2_HOME=/var/local/apache-maven-3.3.3
+    export M2_HOME=/var/local/apache-maven-3.3.9
     export M2=$M2_HOME/bin
     export PATH=$M2:$PATH
     export JAVA_HOME=/usr/java/latest
@@ -172,13 +180,13 @@ install_elda() {
     mkdir -p /var/local/elda
     pushd /var/local/elda
       # Install and update the elda software
-      wget -nv -N -P /vagrant/bin https://elda.googlecode.com/files/elda-standalone-1.2.21.jar
-      jar xf /vagrant/bin/elda-standalone-1.2.21.jar
+      wget -nv -N -P $DAD_HOME/bin https://elda.googlecode.com/files/elda-standalone-1.2.21.jar
+      jar xf $DAD_HOME/bin/elda-standalone-1.2.21.jar
       chmod 777 logs
       # Update the configuration files
       sed -i "s/8080/8082/g" etc/jetty.xml
       sed -i "s/8443/8445/g" etc/jetty.xml
-      cp /vagrant/etc/elda-scoreboard.ttl webapps/elda/specs/scoreboard.ttl
+      cp $DAD_HOME/etc/elda-scoreboard.ttl webapps/elda/specs/scoreboard.ttl
       sed -i "s/hello::specs\/hello-world.ttl/specs\/scoreboard.ttl/g" webapps/elda/WEB-INF/web.xml
       sed -i "/,.*\.ttl/d" webapps/elda/WEB-INF/web.xml
       # Fix some bugs
@@ -191,7 +199,7 @@ install_elda() {
       chown -R $user.$user /var/local/elda
     popd
 
-    cp /vagrant/etc/elda.service /etc/systemd/system
+    cp $DAD_HOME/etc/elda.service /etc/systemd/system
     systemctl enable elda
     systemctl start elda
 }
@@ -208,7 +216,7 @@ install_sparql_client() {
       pip install -r requirements-dev.txt
       deactivate
       chown -R $user.$user /var/local/sparql-browser
-      cp /vagrant/etc/sparql.service /etc/systemd/system/
+      cp $DAD_HOME/etc/sparql.service /etc/systemd/system/
       systemctl enable sparql
       systemctl start sparql
     popd
@@ -233,11 +241,11 @@ install_contreg() {
     echo "Installing Tomcat..."
     # install Apache Tomcat 8
     CATALINA_HOME=/var/local/cr/tomcat
-    wget -nv -N -P /vagrant/bin http://archive.apache.org/dist/tomcat/tomcat-8/v8.0.30/bin/apache-tomcat-8.0.30.tar.gz
-    tar xvf /vagrant/bin/apache-tomcat-8.0.30.tar.gz -C /var/local
+    wget -nv -N -P $DAD_HOME/bin http://archive.apache.org/dist/tomcat/tomcat-8/v8.0.30/bin/apache-tomcat-8.0.30.tar.gz
+    tar xvf $DAD_HOME/bin/apache-tomcat-8.0.30.tar.gz -C /var/local
     mv /var/local/apache-tomcat-8.0.30 $CATALINA_HOME
 
-    cp /vagrant/etc/cr.service /etc/systemd/system/
+    cp $DAD_HOME/etc/cr.service /etc/systemd/system/
     systemctl enable cr
 
     echo "Cloning and building production CR source code..."
@@ -246,7 +254,7 @@ install_contreg() {
     pushd /var/local/cr/build
     git clone https://github.com/digital-agenda-data/scoreboard.contreg.git
     cd scoreboard.contreg
-    git checkout upgrade-2016-incl-sesame-and-liquibase-v7201
+    #git checkout upgrade-2016-incl-sesame-and-liquibase-v7201
 
     # Prepare local.properties.
     cp sample.properties local.properties
@@ -292,15 +300,15 @@ install_test_virtuoso() {
   # git clone -b stable/7 git://github.com/openlink/virtuoso-opensource.git virtuoso-src
   # download and compile virtuoso
   VIRTUOSO_HOME=/var/local/test-virtuoso
-  if [ -f "/vagrant/bin/virtuoso-test-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz" ]
-  # pre-compiled binary files available at http://85.9.22.69/download/vagrant/virtuoso-test-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz
+  if [ -f "$DAD_HOME/bin/virtuoso-test-bin-7.2.4.2.CentOS7_2.x86_64.tar.gz" ]
+  # pre-compiled binary files available at http://85.9.22.69/download/vagrant/virtuoso-test-bin-7.2.4.2.CentOS7_2.x86_64.tar.gz
   then
-    tar xzf /vagrant/bin/virtuoso-test-bin-7.2.0.1.CentOS7_2.x86_64.tar.gz -C /var/local --no-same-owner
+    tar xzf $DAD_HOME/bin/virtuoso-test-bin-7.2.4.2.CentOS7_2.x86_64.tar.gz -C /var/local --no-same-owner
   else
     # download 7.2.0.1
-    wget -nv -N -P /vagrant/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.0.1/virtuoso-opensource-7.2.0_p1.tar.gz
-    tar xzf /vagrant/bin/virtuoso-opensource-7.2.0_p1.tar.gz --no-same-owner
-    cd virtuoso-opensource-7.2.0_p1
+    wget -nv -N -P $DAD_HOME/bin/ https://github.com/openlink/virtuoso-opensource/releases/download/v7.2.4.2/virtuoso-opensource-7.2.4.2.tar.gz
+    tar xzf $DAD_HOME/bin/virtuoso-opensource-7.2.4.2.tar.gz --no-same-owner
+    cd virtuoso-opensource-7.2.4.2
     ./autogen.sh
     ./configure --prefix=$VIRTUOSO_HOME --with-readline --enable-fct-vad --enable-conductor-vad --with-port=1112
     make
@@ -337,9 +345,9 @@ install_test_virtuoso() {
   echo 'export PATH=$PATH:/var/local/test-virtuoso/bin' | tee --append /home/$user/.bashrc > /dev/null
   echo 'export PATH=$PATH:/var/local/test-virtuoso/bin' | tee --append /home/vagrant/.bashrc > /dev/null
 
-  cp /vagrant/etc/virtuoso7-test.service /etc/systemd/system/
-  cp /vagrant/etc/virtuoso.env /root/virtuoso7-test.env
-  cp /vagrant/misc/shutdown.sql $VIRTUOSO_HOME/var/lib/virtuoso/db/
+  cp $DAD_HOME/etc/virtuoso7-test.service /etc/systemd/system/
+  cp $DAD_HOME/etc/virtuoso.env /root/virtuoso7-test.env
+  cp $DAD_HOME/misc/shutdown.sql $VIRTUOSO_HOME/var/lib/virtuoso/db/
   systemctl enable virtuoso7-test
   systemctl start virtuoso7-test
 
@@ -347,7 +355,7 @@ install_test_virtuoso() {
   rm -rf /tmp/test_export_graph
   wget -nv -N -P /tmp/ http://85.9.22.69/download/vagrant/test_export_graph.tgz
   tar xzf /tmp/test_export_graph.tgz -C /tmp --no-same-owner
-  $VIRTUOSO_HOME/bin/isql 1112 dba dba /vagrant/misc/import_test.sql
+  $VIRTUOSO_HOME/bin/isql 1112 dba dba $DAD_HOME/misc/import_test.sql
   popd
 }
 
@@ -372,24 +380,24 @@ install_test_plone() {
   bin/buildout
 
   #get data fs
-  wget -nv -N -P /vagrant/data http://85.9.22.69/download/vagrant/plone-storage-test.tar.gz
-  tar -xzvf /vagrant/data/plone-storage-test.tar.gz --directory=/var/local/$HOME_DIR/var
+  wget -nv -N -P $DAD_HOME/data http://85.9.22.69/download/vagrant/plone-storage-test.tar.gz
+  tar -xzvf $DAD_HOME/data/plone-storage-test.tar.gz --directory=/var/local/$HOME_DIR/var
 
   chown -R $user.$user /var/local/$HOME_DIR
 
   #create cron for data export
-  chmod +x /var/local/test-plone/export/export_datasets_test.sh
+  chmod +x /var/local/test-plone/export/export_datasets_test.sh /var/local/plone/export/export_datasets.py
   line="15 23 * * * /var/local/test-plone/export/export_datasets_test.sh"
-  (crontab -u scoreboard -l; echo "$line" ) | crontab -u scoreboard -
+  (crontab -u $user -l; echo "$line" ) | crontab -u $user -
 
-  cp /vagrant/etc/scoreboard-test.conf /etc/httpd/conf.d
+  cp $DAD_HOME/etc/scoreboard-test.conf /etc/httpd/conf.d
   mkdir -p /var/www/test-html/download
   chown apache.scoreboard /var/www/test-html -R
   chmod g+w /var/www/test-html -R
   systemctl reload httpd
 
 
-  cp /vagrant/etc/supervisord-test.service /etc/systemd/system/
+  cp $DAD_HOME/etc/supervisord-test.service /etc/systemd/system/
   systemctl enable supervisord-test
   systemctl start supervisord-test
 
@@ -411,7 +419,7 @@ install_test_sparql_client() {
       sed -i "s/55000/45300/g" run_sparql_browser.sh
 
       chown -R $user.$user /var/local/test-sparql-browser
-      cp /vagrant/etc/sparql-test.service /etc/systemd/system/
+      cp $DAD_HOME/etc/sparql-test.service /etc/systemd/system/
       systemctl enable sparql-test
       systemctl start sparql-test
     popd
@@ -427,7 +435,7 @@ install_test_contreg() {
     CATALINA_HOME=/var/local/test-cr/tomcat
 
     # Install Tomcat's test-instance.
-    tar xvf /vagrant/bin/apache-tomcat-8.0.30.tar.gz -C /var/local/test-cr
+    tar xvf $DAD_HOME/bin/apache-tomcat-8.0.30.tar.gz -C /var/local/test-cr
     mv /var/local/test-cr/apache-tomcat-8.0.30 $CATALINA_HOME
 
     echo "Configuring test Tomcat's server.xml ..."
@@ -441,7 +449,7 @@ install_test_contreg() {
     echo "Creating test Tomcat's service ..."
 
     # Create test-tomcat service, start it.
-    cp /vagrant/etc/cr-test.service /etc/systemd/system/
+    cp $DAD_HOME/etc/cr-test.service /etc/systemd/system/
     systemctl enable cr-test
 
     echo "Preparing test CR's application home and build directories..."
@@ -460,7 +468,7 @@ install_test_contreg() {
     pushd /var/local/test-cr/build
     git clone https://github.com/digital-agenda-data/scoreboard.contreg.git
     cd scoreboard.contreg
-    git checkout upgrade-2016-incl-sesame-and-liquibase-v7201
+    #git checkout upgrade-2016-incl-sesame-and-liquibase-v7201
 
     # Prepare local.properties.
     cp sample.properties local.properties
@@ -511,11 +519,11 @@ install_test_contreg() {
 install_piwik() {
   mkdir -p /var/www/test-html/analytics
   pushd /var/www/test-html
-    wget -nv -N -P /vagrant/bin/ http://builds.piwik.org/piwik.zip
+    wget -nv -N -P $DAD_HOME/bin/ http://builds.piwik.org/piwik.zip
     yum install -y unzip
-    unzip /vagrant/bin/piwik.zip -d analytics
+    unzip $DAD_HOME/bin/piwik.zip -d analytics
     #TODO: change salt in config.ini.php
-    cp /vagrant/etc/config.ini.php analytics/piwik/config/
+    cp $DAD_HOME/etc/config.ini.php analytics/piwik/config/
     #mariadb
     yum install -y mariadb-server mariadb
     systemctl enable mariadb
@@ -523,9 +531,9 @@ install_piwik() {
     mysql -u root -e "CREATE DATABASE piwik"
     mysql -u root -e "CREATE USER 'piwik'@'localhost' IDENTIFIED BY 'piwik';"
     mysql -u root -e "GRANT ALL PRIVILEGES ON piwik.* TO 'piwik'@'localhost';"
-    wget -nv -N -P /vagrant/data http://85.9.22.69/download/vagrant/piwik_dump.sql.gz
-    gunzip -c /vagrant/data/piwik_dump.sql.gz > /vagrant/data/piwik_dump.sql
-    mysql -u root piwik < /vagrant/data/piwik_dump.sql
+    wget -nv -N -P $DAD_HOME/data http://85.9.22.69/download/vagrant/piwik_dump.sql.gz
+    gunzip -c $DAD_HOME/data/piwik_dump.sql.gz > $DAD_HOME/data/piwik_dump.sql
+    mysql -u root piwik < $DAD_HOME/data/piwik_dump.sql
     # PHP
     rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
@@ -535,13 +543,6 @@ install_piwik() {
     systemctl restart httpd
   popd
 }
-
-user=scoreboard
-adduser $user
-chmod o+w /var/local
-
-# install telnet
-yum install -y telnet
 
 # Install Virtuoso.
 if [ ! -d "/var/local/virtuoso" ]; then

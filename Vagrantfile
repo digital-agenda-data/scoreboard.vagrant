@@ -6,7 +6,7 @@
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
 Vagrant.configure(2) do |config|
-  config.vm.box = "cristiroma/centos-7-minimal"
+  config.vm.box = "centos/7"
 
   if Vagrant.has_plugin?("vagrant-cachier")
     config.cache.enable :yum
