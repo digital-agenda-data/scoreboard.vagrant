@@ -544,6 +544,38 @@ install_piwik() {
   popd
 }
 
+#
+# Installation script for Apache Solr
+#
+install_solr() {
+  yum install -y lsof
+  pushd /var/local
+    SOLR_HOME=/var/local/solr
+    wget -nv -N http://www-eu.apache.org/dist/lucene/solr/6.2.1/solr-6.2.1.tgz
+    tar xzf solr-6.2.1.tgz solr-6.2.1/bin/install_solr_service.sh --strip-components=2
+    ./install_solr_service.sh solr-6.2.1.tgz -d $SOLR_HOME -u $user
+    # production
+    mkdir -p $SOLR_HOME/data/scoreboard/data
+    cp -r /opt/solr/server/solr/configsets/basic_configs/conf/ $SOLR_HOME/data/scoreboard/
+    gunzip -c $DAD_HOME/etc/synonyms.txt.gz > $SOLR_HOME/data/scoreboard/conf/synonyms.txt
+    # replace solrconfig.xml; use backslash to avoid alias cp = cp -i
+    \cp $DAD_HOME/etc/solrconfig.xml $SOLR_HOME/data/scoreboard/conf
+
+    # test
+    mkdir -p $SOLR_HOME/data/scoreboardtest/data
+    cp -r /opt/solr/server/solr/configsets/basic_configs/conf/ $SOLR_HOME/data/scoreboardtest/
+    gunzip -c $DAD_HOME/etc/synonyms.txt.gz > $SOLR_HOME/data/scoreboardtest/conf/synonyms.txt
+    \cp $DAD_HOME/etc/solrconfig.xml $SOLR_HOME/data/scoreboardtest/conf
+
+    chown -R $user.$user $SOLR_HOME
+    # start solr
+    service solr start
+    # create cores
+    curl "http://localhost:8983/solr/admin/cores?action=CREATE&name=scoreboard&instanceDir=scoreboard&dataDir=data"
+    curl "http://localhost:8983/solr/admin/cores?action=CREATE&name=scoreboardtest&instanceDir=scoreboardtest&dataDir=data"
+  popd
+}
+
 # Install Virtuoso.
 if [ ! -d "/var/local/virtuoso" ]; then
     echo "Installing virtuoso (production) ..."
