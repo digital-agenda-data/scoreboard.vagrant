@@ -1,0 +1,4 @@
+# Set of overrides for the english stemmer
+children	child
+women	woman
+men	man

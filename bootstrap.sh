@@ -557,15 +557,15 @@ install_solr() {
     # production
     mkdir -p $SOLR_HOME/data/scoreboard/data
     cp -r /opt/solr/server/solr/configsets/basic_configs/conf/ $SOLR_HOME/data/scoreboard/
-    gunzip -c $DAD_HOME/etc/synonyms.txt.gz > $SOLR_HOME/data/scoreboard/conf/synonyms.txt
+    gunzip -c $DAD_HOME/etc/solr/synonyms.txt.gz > $SOLR_HOME/data/scoreboard/conf/synonyms.txt
     # replace solrconfig.xml; use backslash to avoid alias cp = cp -i
-    \cp $DAD_HOME/etc/solrconfig.xml $SOLR_HOME/data/scoreboard/conf
+    \cp $DAD_HOME/etc/solr/solrconfig.xml $SOLR_HOME/data/scoreboard/conf
 
     # test
     mkdir -p $SOLR_HOME/data/scoreboardtest/data
     cp -r /opt/solr/server/solr/configsets/basic_configs/conf/ $SOLR_HOME/data/scoreboardtest/
-    gunzip -c $DAD_HOME/etc/synonyms.txt.gz > $SOLR_HOME/data/scoreboardtest/conf/synonyms.txt
-    \cp $DAD_HOME/etc/solrconfig.xml $SOLR_HOME/data/scoreboardtest/conf
+    gunzip -c $DAD_HOME/etc/solr/synonyms.txt.gz > $SOLR_HOME/data/scoreboardtest/conf/synonyms.txt
+    \cp $DAD_HOME/etc/solr/solrconfig.xml $SOLR_HOME/data/scoreboardtest/conf
 
     chown -R $user.$user $SOLR_HOME
     # start solr
