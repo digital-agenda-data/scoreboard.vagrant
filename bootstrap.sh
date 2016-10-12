@@ -562,6 +562,7 @@ install_solr() {
     \cp $DAD_HOME/etc/solr/solrconfig.xml $SOLR_HOME/data/scoreboard/conf
     \cp $DAD_HOME/etc/solr/en_GB.* $SOLR_HOME/data/scoreboard/conf/lang
     \cp $DAD_HOME/etc/solr/stemdict_en.txt $SOLR_HOME/data/scoreboard/conf/lang
+    \cp $DAD_HOME/etc/solr/managed-schema $SOLR_HOME/data/scoreboard/conf
 
     # test
     mkdir -p $SOLR_HOME/data/scoreboardtest/data
@@ -570,6 +571,7 @@ install_solr() {
     \cp $DAD_HOME/etc/solr/solrconfig.xml $SOLR_HOME/data/scoreboardtest/conf
     \cp $DAD_HOME/etc/solr/en_GB.* $SOLR_HOME/data/scoreboardtest/conf/lang
     \cp $DAD_HOME/etc/solr/stemdict_en.txt $SOLR_HOME/data/scoreboardtest/conf/lang
+    \cp $DAD_HOME/etc/solr/managed-schema $SOLR_HOME/data/scoreboardtest/conf
 
     chown -R $user.$user $SOLR_HOME
     # start solr
