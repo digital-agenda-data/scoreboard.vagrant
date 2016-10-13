@@ -755,18 +755,19 @@
     <lst name="defaults">
       <str name="echoParams">explicit</str>
       <int name="rows">100</int>
+      <int name="mm">1</int>
       <str name="q.op">AND</str>
       <str name="defType">edismax</str>
       <!-- <str name="df">text</str> -->
       <str name="qf">
         <!-- General fields -->
-        notation_s^100
+        notation_txt_en^100
         label_txt_en^100
         short_label_txt_en^100
         definition_txt_en^50
         note_txt_en^30
-        group_name_txt^10
-        group_notation_ss^10
+        group_name_txt_en_m^10
+        group_notation_txt_en_m^10
         source_label_txt_en^5
         source_definition_txt_en^5
         source_notes_txt_en^5
